@@ -1,0 +1,72 @@
+version: 2
+
+# The engine ships as a binary so a port's CI does not need a Go toolchain, and
+# so the asset names the setup action downloads stay predictable:
+# spn_<os>_<arch>.tar.gz.
+
+project_name: spn
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: spn
+    main: ./cmd/spn
+    binary: spn
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: spn
+    formats: [tar.gz]
+    # The setup action resolves exactly this name.
+    name_template: "spn_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  use: github
+  sort: asc
+  groups:
+    - title: Palette
+      regexp: '^feat\(palette\)'
+      order: 0
+    - title: Ports
+      regexp: '^feat\(registry\)|^feat\(ports\)'
+      order: 1
+    - title: Engine
+      regexp: '^feat'
+      order: 2
+    - title: Fixes
+      regexp: '^fix'
+      order: 3
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+
+release:
+  footer: |
+    A port declares the engine range its mapping is written against, so nothing
+    in a port repository needs editing to pick this up:
+
+    ```yaml
+    ---
+    spn:
+      version: "^{{ .Major }}.{{ .Minor }}"
+    ---
+    ```

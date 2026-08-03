@@ -1,0 +1,135 @@
+name: Setup spn
+description: >-
+  Install the SP Night engine, resolving the version from a port's template
+  frontmatter so the port's CI never has to name it.
+
+# A mapping declares the tool range it is written against:
+#
+#   ---
+#   spn:
+#     version: "^1.0"
+#   ---
+#
+# This action reads that and installs the newest release satisfying it. Renovate
+# bumps the constraint in the template, one PR per port, and nothing in a port's
+# workflow needs touching when the engine moves.
+
+inputs:
+  spn-version:
+    description: >-
+      Version to install (e.g. 1.2.3, or "latest"). Omit to resolve it from the
+      template frontmatter in this repository.
+    required: false
+  template:
+    description: >-
+      Template to read the constraint from. Omit to use the only *.tmpl in the
+      working directory.
+    required: false
+  working-directory:
+    description: Directory to look for the template in.
+    required: false
+    default: "."
+
+outputs:
+  version:
+    description: The version that was installed.
+    value: ${{ steps.resolve.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ github.token }}
+        WANT: ${{ inputs.spn-version }}
+        TEMPLATE: ${{ inputs.template }}
+      run: |
+        set -euo pipefail
+
+        constraint=""
+        if [ -z "${WANT}" ]; then
+          tmpl="${TEMPLATE}"
+          if [ -z "$tmpl" ]; then
+            # shellcheck disable=SC2012
+            count=$(ls -1 ./*.tmpl 2>/dev/null | wc -l)
+            if [ "$count" -ne 1 ]; then
+              echo "::error::found $count *.tmpl files; pass the template input" >&2
+              exit 1
+            fi
+            tmpl=$(ls -1 ./*.tmpl)
+          fi
+          # The frontmatter is the first --- block; take spn.version from it.
+          constraint=$(awk '
+            NR==1 && $0!="---" { exit }
+            NR==1 { infm=1; next }
+            infm && $0=="---" { exit }
+            infm && /^[[:space:]]+version:[[:space:]]*/ {
+              sub(/^[[:space:]]+version:[[:space:]]*/, "")
+              gsub(/^"|"$|^'"'"'|'"'"'$/, "")
+              print; exit
+            }
+          ' "$tmpl")
+          if [ -z "$constraint" ]; then
+            echo "::error::$tmpl declares no spn.version in its frontmatter" >&2
+            exit 1
+          fi
+          echo "constraint from $tmpl: $constraint"
+        fi
+
+        resolve() { # resolve <constraint>
+          local spec="$1" major
+          case "$spec" in
+            latest) gh release view --repo sp-night/sp-night --json tagName -q .tagName; return ;;
+            ^*)     major="${spec#^}"; major="${major%%.*}" ;;
+            *)      printf 'v%s\n' "${spec#v}"; return ;;
+          esac
+          # Newest release inside the declared major.
+          gh release list --repo sp-night/sp-night --limit 100 --json tagName -q '.[].tagName' \
+            | grep -E "^v${major}\." \
+            | sort -V | tail -1
+        }
+
+        if [ -n "${WANT}" ]; then
+          tag=$(resolve "${WANT}")
+        else
+          tag=$(resolve "$constraint")
+        fi
+        if [ -z "$tag" ]; then
+          echo "::error::no spn release satisfies '${WANT:-$constraint}'" >&2
+          exit 1
+        fi
+        echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+        echo "tag=$tag" >> "$GITHUB_OUTPUT"
+        echo "resolved to $tag"
+
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        TAG: ${{ steps.resolve.outputs.tag }}
+      run: |
+        set -euo pipefail
+
+        case "$(uname -s)" in
+          Linux)  os=linux ;;
+          Darwin) os=darwin ;;
+          *) echo "::error::unsupported OS $(uname -s)" >&2; exit 1 ;;
+        esac
+        case "$(uname -m)" in
+          x86_64|amd64) arch=amd64 ;;
+          arm64|aarch64) arch=arm64 ;;
+          *) echo "::error::unsupported architecture $(uname -m)" >&2; exit 1 ;;
+        esac
+
+        asset="spn_${os}_${arch}.tar.gz"
+        tmp=$(mktemp -d)
+        gh release download "$TAG" --repo sp-night/sp-night --pattern "$asset" --dir "$tmp"
+        tar -xzf "$tmp/$asset" -C "$tmp"
+
+        install -d "$HOME/.local/bin"
+        install -m 0755 "$tmp/spn" "$HOME/.local/bin/spn"
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        rm -rf "$tmp"
+
+        "$HOME/.local/bin/spn" version

@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "::error::not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - run: go vet ./...
+
+      # The fidelity gate lives here: the suite renders the mappings of the
+      # already-published ports and compares against the files users installed.
+      - run: go test ./... -count=1
+
+      # Fails if any colour pair falls below its contrast floor.
+      - name: contrast
+        run: go run ./cmd/spn check -v --palette palette
+
+      # The catalogue has to be well formed before anything reads from it.
+      - name: catalogue
+        run: go run ./cmd/spn registry --registry registry/ports.yml --copy registry/copy.yml
+
+      - name: build
+        run: go build ./...

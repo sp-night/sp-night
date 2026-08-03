@@ -1,0 +1,158 @@
+---
+spn:
+  version: "^1.0"
+  matrix: [flavor]
+  filename: "themes/sp_night_{{ .Flavor }}.yml"
+---
+# SP Night — {{ .FlavorLabel }}
+# {{ .FlavorDesc }}
+#
+# Generated from the SP Night palette — do not edit by hand.
+# https://github.com/sp-night/eza
+#
+# install: ~/.config/eza/theme.yml   (or $EZA_CONFIG_DIR/theme.yml)
+# eza picks it up on the next run — nothing to source. If you used the old
+# EZA_COLORS script, remove the source line: the env var overrides this file.
+
+colourful: true
+
+filekinds:
+  normal: {foreground: "{{ .R.ui.fg }}"}
+  directory: {foreground: "{{ .R.syntax.keyword }}", is_bold: true}
+  symlink: {foreground: "{{ .R.syntax.operator }}"}
+  pipe: {foreground: "{{ .R.syntax.type }}"}
+  block_device: {foreground: "{{ .R.syntax.attribute }}"}
+  char_device: {foreground: "{{ .R.syntax.attribute }}"}
+  socket: {foreground: "{{ .R.syntax.macro }}"}
+  special: {foreground: "{{ .R.syntax.macro }}"}
+  executable: {foreground: "{{ .R.diagnostic.ok }}", is_bold: true}
+  mount_point: {foreground: "{{ .R.syntax.function }}"}
+
+perms:
+  user_read: {foreground: "{{ .R.syntax.constant }}"}
+  user_write: {foreground: "{{ .R.diagnostic.error }}"}
+  user_execute_file: {foreground: "{{ .R.diagnostic.ok }}"}
+  user_execute_other: {foreground: "{{ .R.diagnostic.ok }}"}
+  group_read: {foreground: "{{ .R.syntax.constant }}"}
+  group_write: {foreground: "{{ .R.diagnostic.error }}"}
+  group_execute: {foreground: "{{ .R.diagnostic.ok }}"}
+  other_read: {foreground: "{{ .R.syntax.constant }}"}
+  other_write: {foreground: "{{ .R.diagnostic.error }}"}
+  other_execute: {foreground: "{{ .R.diagnostic.ok }}"}
+  special_user_file: {foreground: "{{ .R.diagnostic.warn }}"}
+  special_other: {foreground: "{{ .R.diagnostic.warn }}"}
+  attribute: {foreground: "{{ .R.ui.fg_muted }}"}
+
+size:
+  major: {foreground: "{{ .R.syntax.type }}"}
+  minor: {foreground: "{{ .R.syntax.type }}"}
+  number_byte: {foreground: "{{ .R.syntax.number }}"}
+  number_kilo: {foreground: "{{ .R.syntax.number }}"}
+  number_mega: {foreground: "{{ .R.syntax.number }}"}
+  number_giga: {foreground: "{{ .R.syntax.number }}"}
+  number_huge: {foreground: "{{ .R.syntax.number }}"}
+  unit_byte: {foreground: "{{ .R.ui.fg_dim }}"}
+  unit_kilo: {foreground: "{{ .R.ui.fg_dim }}"}
+  unit_mega: {foreground: "{{ .R.ui.fg_dim }}"}
+  unit_giga: {foreground: "{{ .R.ui.fg_dim }}"}
+  unit_huge: {foreground: "{{ .R.ui.fg_dim }}"}
+
+users:
+  user_you: {foreground: "{{ .R.ui.fg_dim }}"}
+  user_root: {foreground: "{{ .R.diagnostic.error }}"}
+  user_other: {foreground: "{{ .R.ui.fg_muted }}"}
+  group_yours: {foreground: "{{ .R.ui.fg_dim }}"}
+  group_other: {foreground: "{{ .R.ui.fg_muted }}"}
+  group_root: {foreground: "{{ .R.diagnostic.error }}"}
+
+links:
+  normal: {foreground: "{{ .R.syntax.operator }}"}
+  multi_link_file: {foreground: "{{ .R.diagnostic.error }}"}
+
+git:
+  new: {foreground: "{{ .R.git.added }}"}
+  modified: {foreground: "{{ .R.git.modified }}"}
+  deleted: {foreground: "{{ .R.git.removed }}"}
+  renamed: {foreground: "{{ .R.git.renamed }}"}
+  typechange: {foreground: "{{ .R.git.renamed }}"}
+  ignored: {foreground: "{{ .R.git.untracked }}"}
+  conflicted: {foreground: "{{ .R.git.conflict }}"}
+
+git_repo:
+  branch_main: {foreground: "{{ .R.ui.fg_dim }}"}
+  branch_other: {foreground: "{{ .R.syntax.keyword }}"}
+  git_clean: {foreground: "{{ .R.diagnostic.ok }}"}
+  git_dirty: {foreground: "{{ .R.git.modified }}"}
+
+security_context:
+  colon: {foreground: "{{ .R.ui.fg_muted }}"}
+  user: {foreground: "{{ .R.ui.fg_dim }}"}
+  role: {foreground: "{{ .R.syntax.type }}"}
+  typ: {foreground: "{{ .R.ui.fg_muted }}"}
+  range: {foreground: "{{ .R.syntax.type }}"}
+
+file_type:
+  image: {foreground: "{{ .R.diagnostic.warn }}"}
+  video: {foreground: "{{ .R.syntax.tag }}"}
+  music: {foreground: "{{ .R.syntax.string }}"}
+  lossless: {foreground: "{{ .R.syntax.function }}"}
+  crypto: {foreground: "{{ .R.ui.fg_muted }}"}
+  document: {foreground: "{{ .R.ui.fg }}"}
+  compressed: {foreground: "{{ .R.syntax.constant }}"}
+  temp: {foreground: "{{ .R.ui.fg_muted }}"}
+  compiled: {foreground: "{{ .R.syntax.type }}"}
+  source: {foreground: "{{ .R.syntax.keyword }}"}
+
+punctuation: {foreground: "{{ .R.ui.fg_muted }}"}
+date: {foreground: "{{ .R.ui.fg_muted }}"}
+inode: {foreground: "{{ .R.ui.fg_muted }}"}
+blocks: {foreground: "{{ .R.syntax.type }}"}
+header: {foreground: "{{ .R.ui.fg_dim }}", is_bold: true}
+octal: {foreground: "{{ .R.syntax.number }}"}
+flags: {foreground: "{{ .R.syntax.constant }}"}
+
+symlink_path: {foreground: "{{ .R.syntax.function }}"}
+control_char: {foreground: "{{ .R.diagnostic.error }}"}
+broken_symlink: {foreground: "{{ .R.diagnostic.error }}", is_bold: true}
+broken_path_overlay: {foreground: "{{ .R.ui.fg_muted }}"}
+
+# Per-language accents — the same the editor port gives these files.
+extensions:
+  md:
+    filename: {foreground: "{{ .R.ui.fg }}"}
+  json:
+    filename: {foreground: "{{ .R.syntax.attribute }}"}
+  yaml:
+    filename: {foreground: "{{ .R.syntax.attribute }}"}
+  yml:
+    filename: {foreground: "{{ .R.syntax.attribute }}"}
+  toml:
+    filename: {foreground: "{{ .R.syntax.attribute }}"}
+  go:
+    filename: {foreground: "{{ .R.syntax.function }}"}
+  lua:
+    filename: {foreground: "{{ .R.syntax.keyword }}"}
+  rs:
+    filename: {foreground: "{{ .R.syntax.tag }}"}
+  py:
+    filename: {foreground: "{{ .R.syntax.keyword }}"}
+  ts:
+    filename: {foreground: "{{ .R.syntax.keyword }}"}
+  tsx:
+    filename: {foreground: "{{ .R.syntax.keyword }}"}
+  js:
+    filename: {foreground: "{{ .R.syntax.attribute }}"}
+  sh:
+    filename: {foreground: "{{ .R.diagnostic.ok }}"}
+  fish:
+    filename: {foreground: "{{ .R.diagnostic.ok }}"}
+  lock:
+    filename: {foreground: "{{ .R.ui.fg_muted }}"}
+  log:
+    filename: {foreground: "{{ .R.ui.fg_muted }}"}
+  gz:
+    filename: {foreground: "{{ .R.syntax.constant }}"}
+  zip:
+    filename: {foreground: "{{ .R.syntax.constant }}"}
+  tar:
+    filename: {foreground: "{{ .R.syntax.constant }}"}

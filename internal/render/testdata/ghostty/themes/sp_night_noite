@@ -1,0 +1,37 @@
+# SP Night — Noite Paulista
+# A cidade às 3h. O escuro azul-violeta do tokyodark, e o poste de sódio queimando quente por cima.
+#
+# Generated from the SP Night palette — do not edit by hand.
+# https://github.com/sp-night/ghostty
+#
+# install: ~/.config/ghostty/themes/sp_night_noite
+# enable:  theme = sp_night_noite
+
+palette = 0=#0f101a
+palette = 1=#ea5d5d
+palette = 2=#89d093
+palette = 3=#f5c66b
+palette = 4=#6e92de
+palette = 5=#b094e2
+palette = 6=#5dbec4
+palette = 7=#868999
+palette = 8=#707380
+palette = 9=#ff716f
+palette = 10=#9ce4a6
+palette = 11=#ffdc9c
+palette = 12=#80a5f2
+palette = 13=#c3a7f6
+palette = 14=#71d1d7
+palette = 15=#d3d7eb
+
+background = 151723
+foreground = d3d7eb
+
+cursor-color = f2984a
+cursor-text = 0f101a
+
+selection-background = 272937
+selection-foreground = d3d7eb
+
+split-divider-color = 373943
+unfocused-split-fill = 0f101a
