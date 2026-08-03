@@ -1,0 +1,339 @@
+# The SP Night port catalogue.
+#
+# One rule: a port is listed here only once it exists as a public repository
+# under github.com/sp-night. There are no planned entries and no placeholders.
+# If it is on this list, you can install it today.
+#
+# Nothing here says how a theme is produced. The registry describes what a user
+# does with a port — which file, where it goes, what to add to switch it on —
+# and which key of the app means which role. Those facts used to live in three
+# places at once: the template header, the port's README, and the website's port
+# list. Now they live here, and the other three are generated.
+#
+# Fields:
+#   slug           unique id, and the repository name under the org
+#   name           display name
+#   group          a key of `groups` below
+#   blurb          one line on what the port covers
+#   homepage       the themed app's own site
+#   repo           https://github.com/sp-night/<slug> — derived, and checked
+#   install        where the file goes on the user's machine
+#   activate       the line the user adds, if the app needs one
+#   note           caveat worth surfacing on the website card
+#   template       the mapping file in the port repository
+#   install_guide  the app-specific prose of the README's Install section
+#   mapping        the "What gets themed" table: app key | role | gloss
+#   preview        the synthetic screenshot: title, fake session, colour strip
+#
+# In `install`, `activate` and preview text, {flavor} and {label} are
+# substituted. In a preview span, `r` is a role (group.role), `c` is a raw
+# palette key — a strip that exists to show colours may name colours.
+
+groups:
+  terminal: Terminals
+  shell: Shell & CLI
+
+ports:
+  - slug: ghostty
+    name: Ghostty
+    group: terminal
+    blurb: The full 16-colour ANSI mapping, plus cursor, selection and split dividers.
+    homepage: https://ghostty.org/
+    repo: https://github.com/sp-night/ghostty
+    install: ~/.config/ghostty/themes/sp_night_{flavor}
+    activate: theme = sp_night_{flavor}
+    note: >-
+      The theme files deliberately have no extension: Ghostty resolves
+      `theme = <name>` against the themes directory by exact file name.
+    template: ghostty.tmpl
+    mapping_closer: what `cursor-color` means
+
+    install_guide: |-
+      Ghostty resolves `theme = <name>` against `~/.config/ghostty/themes/` by exact
+      file name — which is why the theme files deliberately have no extension.
+
+      Grab the flavour you want (or all three):
+
+      ```sh
+      mkdir -p ~/.config/ghostty/themes
+      curl -Lo ~/.config/ghostty/themes/sp_night_noite \
+        https://raw.githubusercontent.com/sp-night/ghostty/main/themes/sp_night_noite
+      ```
+
+      Then enable it in `~/.config/ghostty/config`:
+
+      ```ini
+      theme = sp_night_noite
+      ```
+
+      Reload the configuration (`ctrl+shift+,` on Linux, `cmd+shift+,` on macOS) or
+      open a new window.
+
+      Prefer a checkout? Clone and copy — the files are plain text, there is no build:
+
+      ```sh
+      git clone https://github.com/sp-night/ghostty.git
+      cp ghostty/themes/* ~/.config/ghostty/themes/
+      ```
+
+    mapping:
+      - key: "`palette = 0…15`"
+        role: "`ansi.*`"
+        meaning: the full 16-colour ANSI mapping
+      - key: "`background` / `foreground`"
+        role: "`ui.bg` / `ui.fg`"
+        meaning: "*laje* under the main text"
+      - key: "`cursor-color` / `cursor-text`"
+        role: "`ui.cursor` / `ui.on_accent`"
+        meaning: the *sódio* cursor, dark text inside it
+      - key: "`selection-background` / `-foreground`"
+        role: "`ui.selection` / `ui.fg`"
+        meaning: "*vidro*, glass reflecting the street"
+      - key: "`split-divider-color`"
+        role: "`ui.border`"
+        meaning: "*fiação*, overhead wiring cutting the sky"
+      - key: "`unfocused-split-fill`"
+        role: "`ui.bg_deep`"
+        meaning: "*vão*, the deepest recess"
+
+    preview:
+      title: ghostty — sp_night_{flavor}
+      swatches:
+        label: palette 0–15
+        roles:
+          - ansi.black
+          - ansi.red
+          - ansi.green
+          - ansi.yellow
+          - ansi.blue
+          - ansi.magenta
+          - ansi.cyan
+          - ansi.white
+          - ansi.bright_black
+          - ansi.bright_red
+          - ansi.bright_green
+          - ansi.bright_yellow
+          - ansi.bright_blue
+          - ansi.bright_magenta
+          - ansi.bright_cyan
+          - ansi.bright_white
+      body:
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "(main) ", r: ui.match}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "ghostty +show-config | grep theme", r: ui.fg}
+        - - {t: "theme = sp_night_{flavor}", r: ui.fg}
+        - []
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "cat theme.lua", r: ui.fg}
+        - - {t: "-- the sodium lamp that turns the whole city this colour", r: syntax.comment}
+        - - {t: "local ", r: syntax.keyword}
+          - {t: "palette ", r: syntax.variable}
+          - {t: "= ", r: syntax.operator}
+          - {t: "require", r: syntax.keyword}
+          - {t: "(", r: syntax.punctuation}
+          - {t: "\"sp_night.palette\"", r: syntax.string}
+          - {t: ")", r: syntax.punctuation}
+        - - {t: "if ", r: syntax.keyword}
+          - {t: "vim", r: syntax.builtin}
+          - {t: ".o.background ", r: syntax.variable}
+          - {t: "~= ", r: syntax.operator}
+          - {t: "\"dark\" ", r: syntax.string}
+          - {t: "then return ", r: syntax.keyword}
+          - {t: "nil", r: syntax.constant}
+          - {t: ", ", r: syntax.punctuation}
+          - {t: "\"dark only, by decision\" ", r: syntax.string}
+          - {t: "end", r: syntax.keyword}
+        - []
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "spn check", r: ui.fg}
+        - - {t: "✓ ", r: diagnostic.ok}
+          - {t: "contrast   ", r: ui.fg}
+          - {t: "70 pairs per flavour, AA on every surface", r: ui.fg_dim}
+        - - {t: "✓ ", r: diagnostic.ok}
+          - {t: "accents    ", r: ui.fg}
+          - {t: "separation ΔE ≥ 0.10 or ΔL ≥ 0.04", r: ui.fg_dim}
+
+  - slug: eza
+    name: eza
+    group: shell
+    blurb: A native eza theme.yml — file kinds, permissions, sizes, git status and per-language accents.
+    homepage: https://eza.rocks/
+    repo: https://github.com/sp-night/eza
+    install: ~/.config/eza/theme.yml
+    note: >-
+      eza reads one theme.yml, so the flavour you pick is installed under that
+      exact name. If you used the earlier EZA_COLORS script, drop the `source`
+      line from your shell rc — the variable overrides the theme file.
+    template: eza.yml.tmpl
+    mapping_closer: what a directory should look like
+    key_label: theme.yml key
+    mapping_scope: across all ~80 keys eza exposes
+
+    install_guide: |-
+      These are native [eza themes](https://github.com/eza-community/eza/blob/main/docs/theme.md):
+      eza reads a single `theme.yml` from `~/.config/eza` (or `$EZA_CONFIG_DIR`) on
+      every run — no shell integration, nothing to source.
+
+      Grab the flavour you want **as** `theme.yml`:
+
+      ```sh
+      mkdir -p ~/.config/eza
+      curl -Lo ~/.config/eza/theme.yml \
+        https://raw.githubusercontent.com/sp-night/eza/main/themes/sp_night_noite.yml
+      ```
+
+      That's it — the next `eza` invocation picks it up.
+
+      Prefer a checkout? Clone and symlink, and switching flavours becomes re-pointing
+      one link:
+
+      ```sh
+      git clone https://github.com/sp-night/eza.git
+      ln -sf "$PWD/eza/themes/sp_night_noite.yml" ~/.config/eza/theme.yml
+      ```
+
+      > [!NOTE]
+      > Coming from the old `sp_night_*.sh` port? Remove the `source` line from your
+      > shell rc — a set `EZA_COLORS` variable overrides the theme file.
+
+    mapping:
+      - key: "`filekinds.directory`"
+        role: "`syntax.keyword`"
+        meaning: directories in bold *marginal* — the expressway sign pointing the way
+      - key: "`filekinds.executable`"
+        role: "`diagnostic.ok`"
+        meaning: executables in bold *ibira*, green light
+      - key: "`filekinds.symlink` / `symlink_path`"
+        role: "`syntax.operator` / `syntax.function`"
+        meaning: symlinks and their targets in *sereno*, the cold signage of dawn
+      - key: "`perms.*_read` / `*_write` / `*_execute`"
+        role: "`syntax.constant` / `diagnostic.error` / `diagnostic.ok`"
+        meaning: read is *sódio*, write is *brasa*, execute is *ibira*
+      - key: "`size.number_*` / `size.unit_*`"
+        role: "`syntax.number` / `ui.fg_dim`"
+        meaning: file sizes — the number burns, the unit recedes
+      - key: "`users.user_you` / `user_other`"
+        role: "`ui.fg_dim` / `ui.fg_muted`"
+        meaning: your user quiet, everyone else quieter — root in *brasa*
+      - key: "`date`"
+        role: "`ui.fg_muted`"
+        meaning: dates as ornament, never shouting
+      - key: "`git.new` `modified` `deleted`"
+        role: "`git.added` / `git.modified` / `git.removed`"
+        meaning: git status in *ibira* / *táxi* / *brasa*
+      - key: "`filekinds.pipe` `socket` `*_device`"
+        role: "`syntax.type` / `syntax.macro` / `syntax.attribute`"
+        meaning: pipes, sockets and devices in *temporal*, *estaiada*, *táxi*
+      - key: "`extensions.go` `.rs` `.py`, …"
+        role: per-language accents
+        meaning: source files keep the same accents the editor port gives them
+
+    preview:
+      title: eza — sp_night_{flavor}
+      swatches:
+        label: the roles behind theme.yml
+        keys: [vao, brasa, sodio, taxi, ibira, estaiada, sereno, marginal, temporal, fg_dim, fg]
+      body:
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "cp themes/sp_night_{flavor}.yml ~/.config/eza/theme.yml", r: ui.fg}
+        - []
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "(main) ", r: ui.match}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "eza -la --git", r: ui.fg}
+        - - {t: "Permissions Size User       Date Modified Git  Name", r: ui.fg_dim, b: true}
+        - - {t: "d", r: syntax.keyword, b: true}
+          - {t: "r", r: syntax.constant}
+          - {t: "w", r: diagnostic.error}
+          - {t: "x", r: diagnostic.ok}
+          - {t: "r", r: syntax.constant}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "x", r: diagnostic.ok}
+          - {t: "r", r: syntax.constant}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "x", r: diagnostic.ok}
+          - {t: "     -", r: ui.fg_muted}
+          - {t: " rogeradas  ", r: ui.fg_dim}
+          - {t: "2 Aug 20:14", r: ui.fg_muted}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "--", r: ui.fg_muted}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "themes", r: syntax.keyword, b: true}
+        - - {t: ".", r: ui.fg}
+          - {t: "r", r: syntax.constant}
+          - {t: "w", r: diagnostic.error}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "r", r: syntax.constant}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "r", r: syntax.constant}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "  1.1", r: syntax.number}
+          - {t: "k", r: ui.fg_dim}
+          - {t: " rogeradas  ", r: ui.fg_dim}
+          - {t: "2 Aug 20:14", r: ui.fg_muted}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "M", r: git.modified}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "README.md", r: ui.fg}
+        - - {t: ".", r: ui.fg}
+          - {t: "r", r: syntax.constant}
+          - {t: "w", r: diagnostic.error}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "r", r: syntax.constant}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "r", r: syntax.constant}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "   851", r: syntax.number}
+          - {t: " rogeradas  ", r: ui.fg_dim}
+          - {t: "2 Aug 20:14", r: ui.fg_muted}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "N", r: git.added}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "sp_night_{flavor}.yml", r: syntax.attribute}
+        - - {t: ".", r: ui.fg}
+          - {t: "r", r: syntax.constant}
+          - {t: "w", r: diagnostic.error}
+          - {t: "x", r: diagnostic.ok}
+          - {t: "r", r: syntax.constant}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "x", r: diagnostic.ok}
+          - {t: "r", r: syntax.constant}
+          - {t: "-", r: ui.fg_muted}
+          - {t: "x", r: diagnostic.ok}
+          - {t: "  4.2", r: syntax.number}
+          - {t: "k", r: ui.fg_dim}
+          - {t: " rogeradas  ", r: ui.fg_dim}
+          - {t: "2 Aug 20:14", r: ui.fg_muted}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "--", r: ui.fg_muted}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "run.sh", r: diagnostic.ok, b: true}
+        - - {t: "l", r: syntax.operator}
+          - {t: "r", r: syntax.constant}
+          - {t: "w", r: diagnostic.error}
+          - {t: "x", r: diagnostic.ok}
+          - {t: "r", r: syntax.constant}
+          - {t: "w", r: diagnostic.error}
+          - {t: "x", r: diagnostic.ok}
+          - {t: "r", r: syntax.constant}
+          - {t: "w", r: diagnostic.error}
+          - {t: "x", r: diagnostic.ok}
+          - {t: "     -", r: ui.fg_muted}
+          - {t: " rogeradas  ", r: ui.fg_dim}
+          - {t: "2 Aug 20:14", r: ui.fg_muted}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "--", r: ui.fg_muted}
+          - {t: "   ", r: ui.fg_muted}
+          - {t: "current", r: syntax.operator}
+          - {t: " -> ", r: ui.fg_muted}
+          - {t: "sp_night_{flavor}.yml", r: syntax.function}

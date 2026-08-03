@@ -128,7 +128,7 @@ func TestLintCatchesRawPaletteReferences(t *testing.T) {
 		"in a pipe": "bg = {{ .C.laje | nohash }}\n",
 	} {
 		t.Run(name, func(t *testing.T) {
-			tpl := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\n"+body)
+			tpl := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\n"+body)
 			findings := tpl.Lint()
 			if len(findings) == 0 {
 				t.Fatalf("Lint missed a raw palette reference in %q", body)
@@ -141,21 +141,21 @@ func TestLintCatchesRawPaletteReferences(t *testing.T) {
 }
 
 func TestLintAllowsRolesAndDeclaredVariableLists(t *testing.T) {
-	roleOnly := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\nbg = {{ .R.ui.bg }}\n")
+	roleOnly := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\nbg = {{ .R.ui.bg }}\n")
 	if f := roleOnly.Lint(); len(f) != 0 {
 		t.Errorf("Lint flagged a roles-only template: %v", f)
 	}
 
 	// waybar, gtk and hyprland publish the raw palette on purpose, so the user
 	// can write @sp_sodio in their own stylesheet.
-	declared := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n  raw_palette: true\n---\n@define-color sp_sodio {{ .C.sodio }};\n")
+	declared := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n  raw_palette: true\n---\n@define-color sp_sodio {{ .C.sodio }};\n")
 	if f := declared.Lint(); len(f) != 0 {
 		t.Errorf("Lint flagged a template that declared raw_palette: %v", f)
 	}
 }
 
 func TestLintReportsLineAndColumn(t *testing.T) {
-	tpl := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\nfirst = {{ .R.ui.bg }}\nsecond = {{ .C.sodio }}\n")
+	tpl := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\nfirst = {{ .R.ui.bg }}\nsecond = {{ .C.sodio }}\n")
 	findings := tpl.Lint()
 	if len(findings) != 1 {
 		t.Fatalf("got %d finding(s), want 1", len(findings))
@@ -172,7 +172,7 @@ func TestLintReportsLineAndColumn(t *testing.T) {
 // render "<no value>" into the config file and ship it.
 func TestARoleTypoFailsTheRender(t *testing.T) {
 	pal, roles := mustContract(t)
-	tpl := parse(t, "---\nspn:\n  version: \"^1.0\"\n  matrix: [flavor]\n  filename: \"o_{{ .Flavor }}\"\n---\nbg = {{ .R.ui.backgruond }}\n")
+	tpl := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  matrix: [flavor]\n  filename: \"o_{{ .Flavor }}\"\n---\nbg = {{ .R.ui.backgruond }}\n")
 	if _, err := tpl.Render(pal, roles, Meta{}); err == nil {
 		t.Fatal("a mistyped role rendered without error")
 	}
@@ -181,12 +181,12 @@ func TestARoleTypoFailsTheRender(t *testing.T) {
 func TestOutputPathRejectsAbsoluteAndEmpty(t *testing.T) {
 	pal, roles := mustContract(t)
 
-	abs := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"/etc/theme\"\n---\nx\n")
+	abs := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"/etc/theme\"\n---\nx\n")
 	if _, err := abs.Render(pal, roles, Meta{}); err == nil {
 		t.Error("an absolute spn.filename was accepted")
 	}
 
-	empty := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"{{ .Meaning.nothing }}\"\n---\nx\n")
+	empty := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"{{ .Meaning.nothing }}\"\n---\nx\n")
 	if _, err := empty.Render(pal, roles, Meta{}); err == nil {
 		t.Error("an spn.filename that renders empty was accepted")
 	}
@@ -196,7 +196,7 @@ func TestOutputPathRejectsAbsoluteAndEmpty(t *testing.T) {
 // cannot drift from what the website publishes for the same port.
 func TestMetaReachesTheTemplate(t *testing.T) {
 	pal, roles := mustContract(t)
-	tpl := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\n# {{ .App }} — {{ .Repo }}\n# install: {{ .Install }}\n# enable: {{ .Activate }}\n")
+	tpl := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\n# {{ .App }} — {{ .Repo }}\n# install: {{ .Install }}\n# enable: {{ .Activate }}\n")
 	files, err := tpl.Render(pal, roles, Meta{
 		App: "Ghostty", Slug: "ghostty",
 		Repo:     "https://github.com/sp-night/ghostty",
@@ -218,7 +218,7 @@ func TestMetaReachesTheTemplate(t *testing.T) {
 // the other flavours. The theme is dark-only, so those blocks mirror the dark.
 func TestAllReachesTheOtherFlavours(t *testing.T) {
 	pal, roles := mustContract(t)
-	tpl := parse(t, "---\nspn:\n  version: \"^1.0\"\n  matrix: [flavor]\n  filename: \"o_{{ .Flavor }}\"\n---\n{{ (index .All \"garoa\").R.ui.bg }}\n")
+	tpl := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  matrix: [flavor]\n  filename: \"o_{{ .Flavor }}\"\n---\n{{ (index .All \"garoa\").R.ui.bg }}\n")
 	files, err := tpl.Render(pal, roles, Meta{})
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -234,7 +234,7 @@ func TestAllReachesTheOtherFlavours(t *testing.T) {
 
 func TestRenderFlavorPicksOne(t *testing.T) {
 	pal, roles := mustContract(t)
-	tpl := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"theme.yml\"\n---\n{{ .Flavor }} {{ .R.ui.bg }}\n")
+	tpl := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"theme.yml\"\n---\n{{ .Flavor }} {{ .R.ui.bg }}\n")
 	f, err := tpl.RenderFlavor(pal, roles, Meta{}, "jaragua")
 	if err != nil {
 		t.Fatalf("RenderFlavor: %v", err)
@@ -270,7 +270,7 @@ func TestFuncs(t *testing.T) {
 		// on_accent is vao, which is what reads on the sodio accent
 		{`{{ readable .C.vao .C.fg .R.ui.accent }}`, "#0f101a"},
 	} {
-		tpl := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n  raw_palette: true\n---\n"+tc.tmpl)
+		tpl := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n  raw_palette: true\n---\n"+tc.tmpl)
 		files, err := tpl.Render(pal, roles, Meta{})
 		if err != nil {
 			t.Errorf("%s: %v", tc.tmpl, err)
@@ -285,7 +285,7 @@ func TestFuncs(t *testing.T) {
 // contrast and tojson are the two helpers whose output is not a colour.
 func TestContrastAndTojsonHelpers(t *testing.T) {
 	pal, roles := mustContract(t)
-	tpl := parse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\n{{ contrast .R.ui.fg .R.ui.bg }}\n{{ tojson .R.diagnostic }}\n")
+	tpl := mustParse(t, "---\nspn:\n  version: \"^1.0\"\n  filename: \"o\"\n---\n{{ contrast .R.ui.fg .R.ui.bg }}\n{{ tojson .R.diagnostic }}\n")
 	files, err := tpl.Render(pal, roles, Meta{})
 	if err != nil {
 		t.Fatalf("Render: %v", err)
@@ -308,7 +308,7 @@ func mustContract(t *testing.T) (*theme.Palette, theme.Roles) {
 	return pal, roles
 }
 
-func parse(t *testing.T, src string) *Template {
+func mustParse(t *testing.T, src string) *Template {
 	t.Helper()
 	tpl, err := Parse("test.tmpl", []byte(src))
 	if err != nil {

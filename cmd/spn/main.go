@@ -24,9 +24,13 @@ type command struct {
 func commands() []command {
 	return []command{
 		{"gen", "render a port's templates into finished theme files", runGen},
+		{"readme", "render a port's canonical README from the catalogue", runReadme},
+		{"preview", "draw the synthetic preview for each flavour", runPreview},
+		{"new", "scaffold a new port repository", runNew},
 		{"lint", "check that templates ask for roles, not raw colours", runLint},
 		{"check", "audit contrast, accent separation and colour vision", runCheck},
 		{"palette", "print the palette and the resolved role layer", runPalette},
+		{"registry", "list and validate the port catalogue", runRegistry},
 		{"version", "print the tool version", runVersion},
 	}
 }
