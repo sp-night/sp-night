@@ -1,0 +1,116 @@
+name: sync ports
+
+# Roll a palette or engine change through every published port.
+#
+# It opens a pull request in each port repository — never a direct push to main.
+# That is deliberate: a regeneration is a change to what users install, and it
+# gets read before it ships. A PR with an empty diff means that port was already
+# in sync, which is the answer you want most of the time.
+#
+# Requires PORTS_TOKEN: a fine-grained token with contents:write and
+# pull-requests:write on the sp-night port repositories.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      only:
+        description: Regenerate a single port (its registry slug). Empty means all of them.
+        required: false
+        type: string
+
+jobs:
+  # The matrix comes from the catalogue, so a new port joins the fan-out by
+  # being listed rather than by anyone editing this file.
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      ports: ${{ steps.list.outputs.ports }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - id: list
+        env:
+          ONLY: ${{ inputs.only }}
+        run: |
+          set -euo pipefail
+          all=$(go run ./cmd/spn registry --json --registry registry/ports.yml --copy registry/copy.yml \
+                 | python3 -c 'import json,sys; print(json.dumps(json.load(sys.stdin)["slugs"]))')
+          if [ -n "${ONLY}" ]; then
+            if ! printf '%s' "$all" | grep -q "\"${ONLY}\""; then
+              echo "::error::${ONLY} is not in the catalogue" >&2
+              exit 1
+            fi
+            all="[\"${ONLY}\"]"
+          fi
+          echo "ports=$all" >> "$GITHUB_OUTPUT"
+          echo "fanning out to $all"
+
+  regenerate:
+    needs: plan
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        port: ${{ fromJSON(needs.plan.outputs.ports) }}
+    steps:
+      - name: check out the engine
+        uses: actions/checkout@v4
+        with:
+          path: engine
+
+      - name: check out the port
+        uses: actions/checkout@v4
+        with:
+          repository: sp-night/${{ matrix.port }}
+          path: port
+          token: ${{ secrets.PORTS_TOKEN }}
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      # Built from this checkout rather than downloaded, so a release and the
+      # fan-out it triggers cannot disagree about what the engine does.
+      - name: build the engine
+        working-directory: engine
+        run: go build -o "$RUNNER_TEMP/spn" ./cmd/spn
+
+      - name: regenerate
+        working-directory: port
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/spn" lint
+          "$RUNNER_TEMP/spn" gen --app ${{ matrix.port }}
+          "$RUNNER_TEMP/spn" readme ${{ matrix.port }}
+          "$RUNNER_TEMP/spn" preview ${{ matrix.port }}
+
+      - name: open a pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          path: port
+          token: ${{ secrets.PORTS_TOKEN }}
+          branch: chore/regenerate-from-palette
+          base: main
+          commit-message: |
+            chore(themes): regenerate from the palette
+
+            Rolled through by the engine's fan-out. No hex was chosen here.
+          title: "chore(themes): regenerate from the palette"
+          body: |
+            Regenerated from [`sp-night/sp-night`](https://github.com/sp-night/sp-night)
+            at `${{ github.sha }}`${{ github.event.release.tag_name && format(' ({0})', github.event.release.tag_name) || '' }}.
+
+            Every file here is derived: the theme files from
+            [`${{ matrix.port }}`'s mapping](${{ matrix.port }}), the README and the
+            previews from the port catalogue. If this diff contains something you
+            did not expect, the mapping or the catalogue is what to change — not
+            these files.
+
+            An empty diff means this port was already in sync.
+          labels: |
+            generated
+          delete-branch: true

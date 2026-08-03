@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -218,6 +219,7 @@ func runNew(args []string) error {
 func runRegistry(args []string) error {
 	fs := flag.NewFlagSet("registry", flag.ContinueOnError)
 	regPath, copyPath := registryFlags(fs)
+	asJSON := fs.Bool("json", false, "print the catalogue as JSON — used to build the fan-out matrix")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -232,6 +234,15 @@ func runRegistry(args []string) error {
 	}
 	if _, ok := cp.Blurb("noite"); !ok {
 		return errors.New("copy: the noite blurb is missing")
+	}
+
+	if *asJSON {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetEscapeHTML(false)
+		return enc.Encode(struct {
+			Ports []registry.Port `json:"ports"`
+			Slugs []string        `json:"slugs"`
+		}{reg.Ports, reg.Slugs()})
 	}
 
 	for _, group := range reg.GroupOrder() {
