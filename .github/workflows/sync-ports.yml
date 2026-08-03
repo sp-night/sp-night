@@ -10,9 +10,18 @@ name: sync ports
 # Requires PORTS_TOKEN: a fine-grained token with contents:write and
 # pull-requests:write on the sp-night port repositories.
 
+# Not triggered by `release: published`. A release created with GITHUB_TOKEN does
+# not raise events that start other workflows — GitHub blocks that to prevent
+# loops — so the fan-out would sit waiting for something that never arrives.
+# release.yml calls this workflow directly instead, which also fixes the ordering:
+# publish, move the v1 tag, then regenerate.
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      only:
+        description: Regenerate a single port (its registry slug). Empty means all of them.
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       only:
@@ -57,6 +66,17 @@ jobs:
       matrix:
         port: ${{ fromJSON(needs.plan.outputs.ports) }}
     steps:
+      - name: the fan-out needs a token
+        env:
+          TOKEN: ${{ secrets.PORTS_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::PORTS_TOKEN is empty. Set it as an organisation secret and" \
+                 "grant this repository access to it — an org secret exists but is" \
+                 "invisible to a repository that is not on its access list." >&2
+            exit 1
+          fi
+
       - name: check out the engine
         uses: actions/checkout@v4
         with:
@@ -122,6 +142,17 @@ jobs:
   site:
     runs-on: ubuntu-latest
     steps:
+      - name: the fan-out needs a token
+        env:
+          TOKEN: ${{ secrets.PORTS_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::PORTS_TOKEN is empty. Set it as an organisation secret and" \
+                 "grant this repository access to it — an org secret exists but is" \
+                 "invisible to a repository that is not on its access list." >&2
+            exit 1
+          fi
+
       - name: check out the engine
         uses: actions/checkout@v4
         with:
