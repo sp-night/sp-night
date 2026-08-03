@@ -55,3 +55,10 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -f "$major" "$GITHUB_REF_NAME"
           git push -f origin "$major"
+
+  # Chained explicitly rather than triggered by the release event: a release made
+  # with GITHUB_TOKEN raises no events that start workflows.
+  sync:
+    needs: major-tag
+    uses: ./.github/workflows/sync-ports.yml
+    secrets: inherit
