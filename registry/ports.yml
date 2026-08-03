@@ -164,6 +164,9 @@ ports:
     repo: https://github.com/sp-night/kitty
     install: ~/.config/kitty/sp_night_{flavor}.conf
     activate: include sp_night_{flavor}.conf
+    note: >-
+      kitty applies the last value it reads, so the `include` has to come after
+      anything else in your config that sets colours.
     template: kitty.conf.tmpl
     mapping_closer: what a bell border means
 
