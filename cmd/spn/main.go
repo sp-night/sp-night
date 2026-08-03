@@ -24,6 +24,7 @@ type command struct {
 func commands() []command {
 	return []command{
 		{"palette", "print the palette and the resolved role layer", runPalette},
+		{"check", "audit contrast, accent separation and colour vision", runCheck},
 		{"version", "print the tool version", runVersion},
 	}
 }
