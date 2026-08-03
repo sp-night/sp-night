@@ -1,0 +1,251 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "sp_night palette",
+  "type": "object",
+  "required": [
+    "name",
+    "label",
+    "description",
+    "author",
+    "url",
+    "meaning",
+    "flavors"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "label": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "author": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "meaning": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "vao",
+          "laje",
+          "concreto",
+          "vidro",
+          "fiacao",
+          "fg",
+          "fg_dim",
+          "fg_muted",
+          "brasa",
+          "sodio",
+          "taxi",
+          "ibira",
+          "estaiada",
+          "sereno",
+          "marginal",
+          "temporal",
+          "brasa_vivo",
+          "taxi_vivo",
+          "ibira_vivo",
+          "sereno_vivo",
+          "marginal_vivo",
+          "temporal_vivo"
+        ]
+      },
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "roles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "enum": [
+            "vao",
+            "laje",
+            "concreto",
+            "vidro",
+            "fiacao",
+            "fg",
+            "fg_dim",
+            "fg_muted",
+            "brasa",
+            "sodio",
+            "taxi",
+            "ibira",
+            "estaiada",
+            "sereno",
+            "marginal",
+            "temporal",
+            "brasa_vivo",
+            "taxi_vivo",
+            "ibira_vivo",
+            "sereno_vivo",
+            "marginal_vivo",
+            "temporal_vivo"
+          ]
+        }
+      },
+      "description": "Camada semântica opcional aqui — no repositório ela vive em palette/roles.json, que o gerador carrega separado."
+    },
+    "flavors": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "label",
+          "appearance",
+          "description",
+          "colors"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "appearance": {
+            "enum": [
+              "dark",
+              "light"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "colors": {
+            "type": "object",
+            "required": [
+              "vao",
+              "laje",
+              "concreto",
+              "vidro",
+              "fiacao",
+              "fg",
+              "fg_dim",
+              "fg_muted",
+              "brasa",
+              "sodio",
+              "taxi",
+              "ibira",
+              "estaiada",
+              "sereno",
+              "marginal",
+              "temporal",
+              "brasa_vivo",
+              "taxi_vivo",
+              "ibira_vivo",
+              "sereno_vivo",
+              "marginal_vivo",
+              "temporal_vivo"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "vao": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "laje": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "concreto": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "vidro": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "fiacao": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "fg": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "fg_dim": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "fg_muted": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "brasa": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "sodio": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "taxi": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "ibira": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "estaiada": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "sereno": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "marginal": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "temporal": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "brasa_vivo": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "taxi_vivo": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "ibira_vivo": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "sereno_vivo": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "marginal_vivo": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "temporal_vivo": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
