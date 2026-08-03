@@ -20,6 +20,7 @@ func runGen(args []string) error {
 	check := fs.Bool("check", false, "do not write; fail if any file on disk is out of date")
 	stdout := fs.Bool("stdout", false, "write to stdout instead of to files")
 	app := fs.String("app", "", "registry slug for this port (default: inferred from the template name)")
+	regPath := fs.String("registry", "", "read the port catalogue from this file instead of the embedded copy")
 	quiet := fs.Bool("q", false, "print only failures")
 	if err := parseArgs(fs, args); err != nil {
 		return err
@@ -49,7 +50,7 @@ func runGen(args []string) error {
 		if slug == "" {
 			slug = slugFromTemplate(path)
 		}
-		meta, err := metaFor(slug)
+		meta, err := metaFor(slug, *regPath)
 		if err != nil {
 			return err
 		}
@@ -220,7 +221,10 @@ func slugFromTemplate(path string) string {
 	return name
 }
 
-// metaFor is filled in by the registry. Until a port is listed there, a
-// template renders with an empty Meta — which is fine as long as it does not
-// reference those fields.
-var metaFor = func(slug string) (render.Meta, error) { return render.Meta{}, nil }
+// metaFor is filled in by the registry.
+//
+// A slug that is not in the catalogue is an error rather than an empty Meta. The
+// header of every generated file reads .Repo and .Install from here, so a missing
+// entry used to render a file with a blank install path and ship it — silence is
+// the wrong answer to "this port is not listed yet".
+var metaFor = func(slug, registryPath string) (render.Meta, error) { return render.Meta{}, nil }

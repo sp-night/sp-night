@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/sp-night/sp-night/internal/port"
 	"github.com/sp-night/sp-night/internal/render"
@@ -164,7 +165,8 @@ func runReadme(args []string) error {
 func runNew(args []string) error {
 	fs := flag.NewFlagSet("new", flag.ContinueOnError)
 	regPath, _ := registryFlags(fs)
-	out := fs.String("out", "", "directory to create (default: the slug)")
+	out := fs.String("out", "", "directory to scaffold into (default: the slug)")
+	force := fs.Bool("force", false, "overwrite files the scaffold would replace")
 	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
@@ -188,14 +190,28 @@ func runNew(args []string) error {
 	if root == "" {
 		root = slug
 	}
-	if _, err := os.Stat(root); err == nil {
-		return fmt.Errorf("%s already exists", root)
-	}
 
 	scaffold, err := port.Scaffold(p)
 	if err != nil {
 		return err
 	}
+
+	// Scaffolding into an existing directory is the normal case, not an error:
+	// the documented flow is to create the repository, clone it — so the
+	// directory already holds a LICENSE — and scaffold into the clone. What must
+	// not happen is silently replacing a file someone wrote, so a collision stops
+	// the whole thing before anything is written.
+	var clash []string
+	for _, f := range scaffold {
+		if _, err := os.Stat(filepath.Join(root, f.Path)); err == nil {
+			clash = append(clash, f.Path)
+		}
+	}
+	if len(clash) > 0 && !*force {
+		return fmt.Errorf("%s already has %s — pass --force to overwrite",
+			root, strings.Join(clash, ", "))
+	}
+
 	for _, f := range scaffold {
 		full := filepath.Join(root, f.Path)
 		if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
@@ -258,17 +274,18 @@ func runRegistry(args []string) error {
 // metaFromRegistry replaces the placeholder in gen.go, so a generated file's
 // header comes from the catalogue instead of being typed into the template.
 func init() {
-	metaFor = func(slug string) (render.Meta, error) {
-		reg, err := registry.Embedded()
+	metaFor = func(slug, registryPath string) (render.Meta, error) {
+		reg, err := loadRegistry(registryPath)
 		if err != nil {
 			return render.Meta{}, err
 		}
 		p, ok := reg.Port(slug)
 		if !ok {
-			// Not every template belongs to a listed port yet — a mapping being
-			// drafted has no entry. Rendering with an empty Meta is fine as
-			// long as the template does not reach for those fields.
-			return render.Meta{}, nil
+			return render.Meta{}, fmt.Errorf(
+				"%q is not in the port catalogue, so its install path and repository are unknown.\n"+
+					"List it in registry/ports.yml first — that is step 1 of adding a port.\n"+
+					"Working on an entry that has not shipped yet? Pass --registry with your local copy.",
+				slug)
 		}
 		return port.MetaOf(p), nil
 	}

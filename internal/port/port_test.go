@@ -79,7 +79,7 @@ func TestPreviewSubstitutesPlaceholders(t *testing.T) {
 			if err != nil {
 				t.Fatalf("%s/%s: %v", p.Slug, fl.ID, err)
 			}
-			for _, ph := range []string{"{flavor}", "{label}"} {
+			for _, ph := range []string{"{flavor}", "{label}", "{r:", "{c:"} {
 				if strings.Contains(string(svg), ph) {
 					t.Errorf("%s/%s still contains %s", p.Slug, fl.ID, ph)
 				}
