@@ -114,3 +114,70 @@ jobs:
           labels: |
             generated
           delete-branch: true
+
+  # The website vendors the contract so it can serve /palette.json and
+  # /roles.json without depending on this repository at build time. That copy is
+  # the one thing that can silently fall behind, so it gets the same treatment as
+  # a port: a pull request when it no longer matches.
+  site:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out the engine
+        uses: actions/checkout@v4
+        with:
+          path: engine
+
+      - name: check out the website
+        uses: actions/checkout@v4
+        with:
+          repository: sp-night/sp-night.github.io
+          path: site
+          token: ${{ secrets.PORTS_TOKEN }}
+
+      - name: copy the contract
+        run: |
+          set -euo pipefail
+          cp engine/palette/sp_night.json site/src/data/palette.json
+          cp engine/palette/roles.json    site/src/data/roles.json
+          if git -C site diff --quiet; then
+            echo "the website's copy already matches the contract"
+          fi
+
+      # The website's own suite is the gate: it asserts the contrast policy and
+      # the no-raw-hex rule from the other side. A palette that breaks it must not
+      # reach the site even as a pull request.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - working-directory: site
+        run: npm ci
+      - working-directory: site
+        run: npm run check && npm test
+
+      - name: open a pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          path: site
+          token: ${{ secrets.PORTS_TOKEN }}
+          branch: chore/sync-the-contract
+          base: main
+          commit-message: |
+            chore(data): sync the vendored palette and roles
+
+            Copied from the engine. The site remains the public URL of the
+            contract; this keeps its copy from falling behind.
+          title: "chore(data): sync the vendored palette and roles"
+          body: |
+            The vendored copy in `src/data/` no longer matched
+            [`sp-night/sp-night`](https://github.com/sp-night/sp-night)
+            at `${{ github.sha }}`.
+
+            `npm run check && npm test` passed against the new values before this
+            was opened, so the contrast policy and the no-raw-hex rule still hold.
+
+            An empty diff means the copy was already in sync.
+          labels: |
+            generated
+          delete-branch: true
