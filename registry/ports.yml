@@ -169,7 +169,7 @@ ports:
       line from your shell rc — the variable overrides the theme file.
     template: eza.yml.tmpl
     mapping_closer: what a directory should look like
-    key_label: theme.yml key
+    key_label: "`theme.yml` key"
     mapping_scope: across all ~80 keys eza exposes
 
     install_guide: |-

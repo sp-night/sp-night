@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 	"text/template"
 
 	"github.com/sp-night/sp-night/internal/theme"
@@ -21,6 +22,22 @@ type Meta struct {
 	Homepage string // the themed app's own site
 	Install  string // where the file goes on the user's machine
 	Activate string // the line the user adds, if the app needs one
+}
+
+// forFlavor substitutes {flavor} and {label} in the catalogue's per-port strings.
+//
+// The catalogue states an install path once, with a placeholder — a port installs
+// to sp_night_{flavor}, not to three separately written paths. Rendering has to
+// resolve it, or a generated header would tell the reader to copy a file called
+// "sp_night_{flavor}".
+func (m Meta) forFlavor(f theme.Flavor) Meta {
+	sub := func(s string) string {
+		s = strings.ReplaceAll(s, "{flavor}", f.ID)
+		return strings.ReplaceAll(s, "{label}", f.Label)
+	}
+	m.Install = sub(m.Install)
+	m.Activate = sub(m.Activate)
+	return m
 }
 
 // FlavorRef is one flavour as seen by another. It carries no All of its own, so
@@ -125,7 +142,7 @@ func (t *Template) Render(pal *theme.Palette, roles theme.Roles, meta Meta) ([]F
 			Flavor: f.ID, FlavorLabel: f.Label, FlavorDesc: f.Description,
 			Appearance: f.Appearance, IsDark: f.IsDark(),
 			R: resolved, C: f.Colors, Order: pal.Order, Meaning: pal.Meaning,
-			All: refs, Meta: meta,
+			All: refs, Meta: meta.forFlavor(f),
 		}, nil
 	}
 
@@ -182,7 +199,7 @@ func (t *Template) RenderFlavor(pal *theme.Palette, roles theme.Roles, meta Meta
 		Flavor: fl.ID, FlavorLabel: fl.Label, FlavorDesc: fl.Description,
 		Appearance: fl.Appearance, IsDark: fl.IsDark(),
 		R: resolved, C: fl.Colors, Order: pal.Order, Meaning: pal.Meaning,
-		All: refs, Meta: meta,
+		All: refs, Meta: meta.forFlavor(fl),
 	}
 	f, err := t.renderOne(ctx)
 	if err != nil {
