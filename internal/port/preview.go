@@ -77,9 +77,53 @@ func SVG(p registry.Port, pal *theme.Palette, roles theme.Roles, flavor theme.Fl
 		return resolved[group][r]
 	}
 
-	subst := func(s string) string {
+	// subst resolves the placeholders a preview may use in its text.
+	//
+	// {r:ui.bg} and {c:laje} put the hex itself into the fake session, which is how
+	// a preview can show the value it is painting with — a mockup of
+	// `kitty @ get-colors` printing the real background is worth more than one
+	// printing an invented number.
+	subst := func(s string) (string, error) {
 		s = strings.ReplaceAll(s, "{flavor}", flavor.ID)
-		return strings.ReplaceAll(s, "{label}", flavor.Label)
+		s = strings.ReplaceAll(s, "{label}", flavor.Label)
+
+		var out strings.Builder
+		for {
+			open := strings.Index(s, "{")
+			if open < 0 {
+				out.WriteString(s)
+				return out.String(), nil
+			}
+			close := strings.Index(s[open:], "}")
+			if close < 0 {
+				out.WriteString(s)
+				return out.String(), nil
+			}
+			close += open
+
+			kind, name, ok := strings.Cut(s[open+1:close], ":")
+			if !ok || (kind != "r" && kind != "c") {
+				// Not a reference. A literal brace in a shell snippet is
+				// legitimate, so it is copied through.
+				out.WriteString(s[:open+1])
+				s = s[open+1:]
+				continue
+			}
+
+			var hex string
+			var err error
+			if kind == "r" {
+				hex, err = look(name, "")
+			} else {
+				hex, err = look("", name)
+			}
+			if err != nil {
+				return "", fmt.Errorf("preview text {%s}: %w", s[open+1:close], err)
+			}
+			out.WriteString(s[:open])
+			out.WriteString(hex)
+			s = s[close+1:]
+		}
 	}
 
 	var b strings.Builder
@@ -104,8 +148,12 @@ func SVG(p registry.Port, pal *theme.Palette, roles theme.Roles, flavor theme.Fl
 		fmt.Fprintf(&b, "  <circle cx=\"%d\" cy=\"%d\" r=\"%s\" fill=\"%s\"/>\n",
 			24+i*18, dotY, f1(dotRadius), role(key))
 	}
+	title, err := subst(p.Preview.Title)
+	if err != nil {
+		return nil, fmt.Errorf("%s preview: %w", p.Slug, err)
+	}
 	fmt.Fprintf(&b, "  <text x=\"%d\" y=\"26\" text-anchor=\"middle\" class=\"mono\" fill=\"%s\">%s</text>\n",
-		width/2, role("ui.fg_muted"), escText(subst(p.Preview.Title)))
+		width/2, role("ui.fg_muted"), escText(title))
 
 	// the fake session — an empty line is a vertical gap, not a blank row
 	for i, line := range p.Preview.Body {
@@ -123,14 +171,22 @@ func SVG(p registry.Port, pal *theme.Palette, roles theme.Roles, flavor theme.Fl
 			if s.Bold {
 				bold = ` font-weight="bold"`
 			}
-			fmt.Fprintf(&b, `<tspan fill="%s"%s>%s</tspan>`, hex, bold, escText(subst(s.Text)))
+			text, err := subst(s.Text)
+			if err != nil {
+				return nil, fmt.Errorf("%s preview: %w", p.Slug, err)
+			}
+			fmt.Fprintf(&b, `<tspan fill="%s"%s>%s</tspan>`, hex, bold, escText(text))
 		}
 		b.WriteString("</text>\n")
 	}
 
 	// the colour strip
+	swatchLabel, err := subst(p.Preview.Swatches.Label)
+	if err != nil {
+		return nil, fmt.Errorf("%s preview: %w", p.Slug, err)
+	}
 	fmt.Fprintf(&b, "  <text x=\"%d\" y=\"%d\" class=\"mono\" fill=\"%s\" font-size=\"12\">%s</text>\n",
-		bodyLeft, swatchLabelY, role("ui.fg_muted"), escText(subst(p.Preview.Swatches.Label)))
+		bodyLeft, swatchLabelY, role("ui.fg_muted"), escText(swatchLabel))
 
 	refs := p.Preview.Swatches.Roles
 	raw := len(refs) == 0

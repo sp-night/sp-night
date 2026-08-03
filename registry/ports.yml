@@ -156,6 +156,131 @@ ports:
           - {t: "accents    ", r: ui.fg}
           - {t: "separation ΔE ≥ 0.10 or ΔL ≥ 0.04", r: ui.fg_dim}
 
+  - slug: kitty
+    name: kitty
+    group: terminal
+    blurb: The 16-colour ANSI mapping, plus cursor, selection, splits, the tab bar and the three mark slots.
+    homepage: https://sw.kovidgoyal.net/kitty/
+    repo: https://github.com/sp-night/kitty
+    install: ~/.config/kitty/sp_night_{flavor}.conf
+    activate: include sp_night_{flavor}.conf
+    template: kitty.conf.tmpl
+    mapping_closer: what a bell border means
+
+    install_guide: |-
+      kitty reads a theme through an `include` in its own config, so the file goes
+      next to `kitty.conf` and nothing overwrites it.
+
+      Grab the flavour you want (or all three):
+
+      ```sh
+      mkdir -p ~/.config/kitty
+      curl -Lo ~/.config/kitty/sp_night_noite.conf \
+        https://raw.githubusercontent.com/sp-night/kitty/main/themes/sp_night_noite.conf
+      ```
+
+      Then add the include to `~/.config/kitty/kitty.conf`:
+
+      ```conf
+      include sp_night_noite.conf
+      ```
+
+      Reload with `ctrl+shift+f5` (`cmd+ctrl+,` on macOS), or open a new window.
+
+      > [!NOTE]
+      > Put the `include` after anything else that sets colours — kitty applies the
+      > last value it reads, so an earlier `background` in your own config wins.
+
+      Prefer a checkout? Clone and copy — the files are plain text, there is no build:
+
+      ```sh
+      git clone https://github.com/sp-night/kitty.git
+      cp kitty/themes/*.conf ~/.config/kitty/
+      ```
+
+    mapping:
+      - key: "`color0`…`color15`"
+        role: "`ansi.*`"
+        meaning: the full 16-colour ANSI mapping
+      - key: "`background` / `foreground`"
+        role: "`ui.bg` / `ui.fg`"
+        meaning: "*laje* under the main text"
+      - key: "`cursor` / `cursor_text_color`"
+        role: "`ui.cursor` / `ui.on_accent`"
+        meaning: the *sódio* cursor, dark text inside it
+      - key: "`selection_background` / `_foreground`"
+        role: "`ui.selection` / `ui.fg`"
+        meaning: "*vidro*, glass reflecting the street"
+      - key: "`url_color`"
+        role: "`ui.link`"
+        meaning: links in *marginal*, the expressway sign
+      - key: "`active_border_color` / `inactive_border_color`"
+        role: "`ui.border_active` / `ui.border`"
+        meaning: the focused split in *sódio*, the rest in *fiação*
+      - key: "`bell_border_color`"
+        role: "`diagnostic.warn`"
+        meaning: a bell is a warning, not an accent
+      - key: "`active_tab_*` / `inactive_tab_*`"
+        role: "`ui.selection` / `ui.panel`"
+        meaning: the active tab lifts to glass, the others stay concrete
+      - key: "`tab_bar_background`"
+        role: "`ui.bg_deep`"
+        meaning: the tab bar recedes into the *vão*
+      - key: "`mark1_background`…`mark3_background`"
+        role: "`ui.accent` / `syntax.type` / `syntax.function`"
+        meaning: three marks that have to be told apart, so they differ by hue
+
+    preview:
+      title: kitty — sp_night_{flavor}
+      swatches:
+        label: color0–15
+        roles:
+          - ansi.black
+          - ansi.red
+          - ansi.green
+          - ansi.yellow
+          - ansi.blue
+          - ansi.magenta
+          - ansi.cyan
+          - ansi.white
+          - ansi.bright_black
+          - ansi.bright_red
+          - ansi.bright_green
+          - ansi.bright_yellow
+          - ansi.bright_blue
+          - ansi.bright_magenta
+          - ansi.bright_cyan
+          - ansi.bright_white
+      body:
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "(main) ", r: ui.match}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "kitty @ get-colors | head -4", r: ui.fg}
+        - - {t: "background", r: syntax.attribute}
+          - {t: "            ", r: ui.fg_muted}
+          - {t: "{r:ui.bg}", r: ui.fg}
+        - - {t: "foreground", r: syntax.attribute}
+          - {t: "            ", r: ui.fg_muted}
+          - {t: "{r:ui.fg}", r: ui.fg}
+        - - {t: "cursor", r: syntax.attribute}
+          - {t: "                ", r: ui.fg_muted}
+          - {t: "{r:ui.cursor}", r: ui.fg}
+        - []
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "grep -c '^color' ~/.config/kitty/sp_night_{flavor}.conf", r: ui.fg}
+        - - {t: "16", r: syntax.number}
+        - []
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "spn check", r: ui.fg}
+        - - {t: "✓ ", r: diagnostic.ok}
+          - {t: "contrast   ", r: ui.fg}
+          - {t: "70 pairs per flavour, AA on every surface", r: ui.fg_dim}
+        - - {t: "✓ ", r: diagnostic.ok}
+          - {t: "accents    ", r: ui.fg}
+          - {t: "separation ΔE ≥ 0.10 or ΔL ≥ 0.04", r: ui.fg_dim}
+
   - slug: eza
     name: eza
     group: shell

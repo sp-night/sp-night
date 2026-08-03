@@ -18,8 +18,16 @@ func TestEmbeddedCatalogueLoads(t *testing.T) {
 			t.Errorf("%q is not in the catalogue", slug)
 		}
 	}
-	if _, ok := r.Port("kitty"); ok {
-		t.Error("kitty is listed but has no repository yet — the catalogue lists only shipped ports")
+	// The catalogue lists only shipped ports: there are no placeholders and no
+	// planned entries. That cannot be proved offline, so what is asserted is what
+	// a placeholder would look like — an entry with nothing to install.
+	for _, p := range r.Ports {
+		if p.Repo == "" || p.Install == "" {
+			t.Errorf("%q looks like a placeholder; a port is listed only once it ships", p.Slug)
+		}
+	}
+	if _, ok := r.Port("nvim"); ok {
+		t.Error("nvim is listed but has no repository yet — the catalogue lists only shipped ports")
 	}
 }
 
