@@ -1,0 +1,43 @@
+---
+spn:
+  version: "^1.0"
+  matrix: [flavor]
+  filename: "themes/sp_night_{{ .Flavor }}"
+---
+# SP Night — {{ .FlavorLabel }}
+# {{ .FlavorDesc }}
+#
+# Generated from the SP Night palette — do not edit by hand.
+# https://github.com/sp-night/ghostty
+#
+# install: ~/.config/ghostty/themes/sp_night_{{ .Flavor }}
+# enable:  theme = sp_night_{{ .Flavor }}
+
+palette = 0={{ .R.ansi.black }}
+palette = 1={{ .R.ansi.red }}
+palette = 2={{ .R.ansi.green }}
+palette = 3={{ .R.ansi.yellow }}
+palette = 4={{ .R.ansi.blue }}
+palette = 5={{ .R.ansi.magenta }}
+palette = 6={{ .R.ansi.cyan }}
+palette = 7={{ .R.ansi.white }}
+palette = 8={{ .R.ansi.bright_black }}
+palette = 9={{ .R.ansi.bright_red }}
+palette = 10={{ .R.ansi.bright_green }}
+palette = 11={{ .R.ansi.bright_yellow }}
+palette = 12={{ .R.ansi.bright_blue }}
+palette = 13={{ .R.ansi.bright_magenta }}
+palette = 14={{ .R.ansi.bright_cyan }}
+palette = 15={{ .R.ansi.bright_white }}
+
+background = {{ nohash .R.ui.bg }}
+foreground = {{ nohash .R.ui.fg }}
+
+cursor-color = {{ nohash .R.ui.cursor }}
+cursor-text = {{ nohash .R.ui.on_accent }}
+
+selection-background = {{ nohash .R.ui.selection }}
+selection-foreground = {{ nohash .R.ui.fg }}
+
+split-divider-color = {{ nohash .R.ui.border }}
+unfocused-split-fill = {{ nohash .R.ui.bg_deep }}

@@ -1,0 +1,152 @@
+# SP Night — Garoa
+# A mesma janela, vista através do chuvisco. Cinza chapado — a garoa não esfria a cidade, ela desbota.
+#
+# Generated from the SP Night palette — do not edit by hand.
+# https://github.com/sp-night/eza
+#
+# install: ~/.config/eza/theme.yml   (or $EZA_CONFIG_DIR/theme.yml)
+# eza picks it up on the next run — nothing to source. If you used the old
+# EZA_COLORS script, remove the source line: the env var overrides this file.
+
+colourful: true
+
+filekinds:
+  normal: {foreground: "#c7cdd6"}
+  directory: {foreground: "#7993cb", is_bold: true}
+  symlink: {foreground: "#77babf"}
+  pipe: {foreground: "#af97d3"}
+  block_device: {foreground: "#e7cb8a"}
+  char_device: {foreground: "#e7cb8a"}
+  socket: {foreground: "#56b19f"}
+  special: {foreground: "#56b19f"}
+  executable: {foreground: "#9acaa2", is_bold: true}
+  mount_point: {foreground: "#77babf"}
+
+perms:
+  user_read: {foreground: "#e3a068"}
+  user_write: {foreground: "#d87676"}
+  user_execute_file: {foreground: "#9acaa2"}
+  user_execute_other: {foreground: "#9acaa2"}
+  group_read: {foreground: "#e3a068"}
+  group_write: {foreground: "#d87676"}
+  group_execute: {foreground: "#9acaa2"}
+  other_read: {foreground: "#e3a068"}
+  other_write: {foreground: "#d87676"}
+  other_execute: {foreground: "#9acaa2"}
+  special_user_file: {foreground: "#e7cb8a"}
+  special_other: {foreground: "#e7cb8a"}
+  attribute: {foreground: "#767d88"}
+
+size:
+  major: {foreground: "#af97d3"}
+  minor: {foreground: "#af97d3"}
+  number_byte: {foreground: "#e3a068"}
+  number_kilo: {foreground: "#e3a068"}
+  number_mega: {foreground: "#e3a068"}
+  number_giga: {foreground: "#e3a068"}
+  number_huge: {foreground: "#e3a068"}
+  unit_byte: {foreground: "#8d949f"}
+  unit_kilo: {foreground: "#8d949f"}
+  unit_mega: {foreground: "#8d949f"}
+  unit_giga: {foreground: "#8d949f"}
+  unit_huge: {foreground: "#8d949f"}
+
+users:
+  user_you: {foreground: "#8d949f"}
+  user_root: {foreground: "#d87676"}
+  user_other: {foreground: "#767d88"}
+  group_yours: {foreground: "#8d949f"}
+  group_other: {foreground: "#767d88"}
+  group_root: {foreground: "#d87676"}
+
+links:
+  normal: {foreground: "#77babf"}
+  multi_link_file: {foreground: "#d87676"}
+
+git:
+  new: {foreground: "#9acaa2"}
+  modified: {foreground: "#e7cb8a"}
+  deleted: {foreground: "#d87676"}
+  renamed: {foreground: "#e7cb8a"}
+  typechange: {foreground: "#e7cb8a"}
+  ignored: {foreground: "#767d88"}
+  conflicted: {foreground: "#d87676"}
+
+git_repo:
+  branch_main: {foreground: "#8d949f"}
+  branch_other: {foreground: "#7993cb"}
+  git_clean: {foreground: "#9acaa2"}
+  git_dirty: {foreground: "#e7cb8a"}
+
+security_context:
+  colon: {foreground: "#767d88"}
+  user: {foreground: "#8d949f"}
+  role: {foreground: "#af97d3"}
+  typ: {foreground: "#767d88"}
+  range: {foreground: "#af97d3"}
+
+file_type:
+  image: {foreground: "#e7cb8a"}
+  video: {foreground: "#d87676"}
+  music: {foreground: "#9acaa2"}
+  lossless: {foreground: "#77babf"}
+  crypto: {foreground: "#767d88"}
+  document: {foreground: "#c7cdd6"}
+  compressed: {foreground: "#e3a068"}
+  temp: {foreground: "#767d88"}
+  compiled: {foreground: "#af97d3"}
+  source: {foreground: "#7993cb"}
+
+punctuation: {foreground: "#767d88"}
+date: {foreground: "#767d88"}
+inode: {foreground: "#767d88"}
+blocks: {foreground: "#af97d3"}
+header: {foreground: "#8d949f", is_bold: true}
+octal: {foreground: "#e3a068"}
+flags: {foreground: "#e3a068"}
+
+symlink_path: {foreground: "#77babf"}
+control_char: {foreground: "#d87676"}
+broken_symlink: {foreground: "#d87676", is_bold: true}
+broken_path_overlay: {foreground: "#767d88"}
+
+# Per-language accents — the same the editor port gives these files.
+extensions:
+  md:
+    filename: {foreground: "#c7cdd6"}
+  json:
+    filename: {foreground: "#e7cb8a"}
+  yaml:
+    filename: {foreground: "#e7cb8a"}
+  yml:
+    filename: {foreground: "#e7cb8a"}
+  toml:
+    filename: {foreground: "#e7cb8a"}
+  go:
+    filename: {foreground: "#77babf"}
+  lua:
+    filename: {foreground: "#7993cb"}
+  rs:
+    filename: {foreground: "#d87676"}
+  py:
+    filename: {foreground: "#7993cb"}
+  ts:
+    filename: {foreground: "#7993cb"}
+  tsx:
+    filename: {foreground: "#7993cb"}
+  js:
+    filename: {foreground: "#e7cb8a"}
+  sh:
+    filename: {foreground: "#9acaa2"}
+  fish:
+    filename: {foreground: "#9acaa2"}
+  lock:
+    filename: {foreground: "#767d88"}
+  log:
+    filename: {foreground: "#767d88"}
+  gz:
+    filename: {foreground: "#e3a068"}
+  zip:
+    filename: {foreground: "#e3a068"}
+  tar:
+    filename: {foreground: "#e3a068"}

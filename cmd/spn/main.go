@@ -23,8 +23,10 @@ type command struct {
 
 func commands() []command {
 	return []command{
-		{"palette", "print the palette and the resolved role layer", runPalette},
+		{"gen", "render a port's templates into finished theme files", runGen},
+		{"lint", "check that templates ask for roles, not raw colours", runLint},
 		{"check", "audit contrast, accent separation and colour vision", runCheck},
+		{"palette", "print the palette and the resolved role layer", runPalette},
 		{"version", "print the tool version", runVersion},
 	}
 }
