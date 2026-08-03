@@ -74,7 +74,7 @@ func runPreview(args []string) error {
 	regPath, _ := registryFlags(fs)
 	out := fs.String("out", "assets", "directory to write the previews into")
 	check := fs.Bool("check", false, "do not write; fail if any preview is out of date")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 
@@ -117,7 +117,7 @@ func runReadme(args []string) error {
 	out := fs.String("out", "README.md", "file to write")
 	check := fs.Bool("check", false, "do not write; fail if the README is out of date")
 	stdout := fs.Bool("stdout", false, "write to stdout instead of to a file")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 
@@ -165,7 +165,7 @@ func runNew(args []string) error {
 	fs := flag.NewFlagSet("new", flag.ContinueOnError)
 	regPath, _ := registryFlags(fs)
 	out := fs.String("out", "", "directory to create (default: the slug)")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 	if fs.NArg() != 1 {
@@ -220,7 +220,7 @@ func runRegistry(args []string) error {
 	fs := flag.NewFlagSet("registry", flag.ContinueOnError)
 	regPath, copyPath := registryFlags(fs)
 	asJSON := fs.Bool("json", false, "print the catalogue as JSON — used to build the fan-out matrix")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 

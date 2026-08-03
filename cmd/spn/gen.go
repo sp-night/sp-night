@@ -21,7 +21,7 @@ func runGen(args []string) error {
 	stdout := fs.Bool("stdout", false, "write to stdout instead of to files")
 	app := fs.String("app", "", "registry slug for this port (default: inferred from the template name)")
 	quiet := fs.Bool("q", false, "print only failures")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 
@@ -155,7 +155,7 @@ func writeFiles(files []render.File, quiet bool) error {
 
 func runLint(args []string) error {
 	fs := flag.NewFlagSet("lint", flag.ContinueOnError)
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 

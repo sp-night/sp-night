@@ -12,7 +12,7 @@ func runCheck(args []string) error {
 	fs := flag.NewFlagSet("check", flag.ContinueOnError)
 	dir := paletteFlag(fs)
 	verbose := fs.Bool("v", false, "also list the passing pairs and the colour vision summary")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 

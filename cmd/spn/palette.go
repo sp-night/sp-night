@@ -31,7 +31,7 @@ func runPalette(args []string) error {
 	dir := paletteFlag(fs)
 	asJSON := fs.Bool("json", false, "print the contract as JSON instead of a table")
 	roles := fs.Bool("roles", false, "print the resolved role layer instead of the colours")
-	if err := fs.Parse(args); err != nil {
+	if err := parseArgs(fs, args); err != nil {
 		return err
 	}
 

@@ -6,8 +6,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"strings"
 )
 
 // version is stamped by the release build (-ldflags "-X main.version=..."). A
@@ -76,4 +78,43 @@ func usage(w *os.File) {
 func runVersion([]string) error {
 	fmt.Println(version)
 	return nil
+}
+
+// parseArgs parses flags regardless of where they sit relative to the
+// positional arguments.
+//
+// Go's flag package stops at the first non-flag argument, so `spn new eza --out
+// x` would treat --out as a positional and fail with a usage error. Every other
+// command line the reader has ever used permutes, and being the exception is not
+// worth a paragraph in the docs — so the arguments get reordered before parsing.
+func parseArgs(fs *flag.FlagSet, args []string) error {
+	known, boolean := map[string]bool{}, map[string]bool{}
+	fs.VisitAll(func(f *flag.Flag) {
+		known[f.Name] = true
+		if bf, ok := f.Value.(interface{ IsBoolFlag() bool }); ok && bf.IsBoolFlag() {
+			boolean[f.Name] = true
+		}
+	})
+
+	var flags, positional []string
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		if a == "--" {
+			positional = append(positional, args[i+1:]...)
+			break
+		}
+		if len(a) > 1 && a[0] == '-' {
+			flags = append(flags, a)
+			name := strings.TrimLeft(a, "-")
+			// A non-boolean flag written as `--out x` carries its value in the
+			// next argument, which has to travel with it.
+			if !strings.Contains(name, "=") && known[name] && !boolean[name] && i+1 < len(args) {
+				i++
+				flags = append(flags, args[i])
+			}
+			continue
+		}
+		positional = append(positional, a)
+	}
+	return fs.Parse(append(flags, positional...))
 }
