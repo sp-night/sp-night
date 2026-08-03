@@ -1,0 +1,12 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["local>sp-night/sp-night//renovate-config"],
+  "packageRules": [
+    {
+      "description": "The engine has one Go dependency; a bump there is a chore, not a theme change.",
+      "matchManagers": ["gomod"],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "deps"
+    }
+  ]
+}

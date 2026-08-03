@@ -1,0 +1,84 @@
+name: Check an SP Night port
+
+# The entire CI of a port repository. A port calls it with six lines:
+#
+#   jobs:
+#     check:
+#       uses: sp-night/sp-night/.github/workflows/spn-check.yml@v1
+#       with:
+#         port: ghostty
+#
+# It fails when anything committed is out of date, and never writes. Fixing a
+# failure is `spn gen && spn readme && spn preview` locally — the same commands
+# that produced the files in the first place.
+
+on:
+  workflow_call:
+    inputs:
+      port:
+        description: The registry slug of this port.
+        required: true
+        type: string
+      spn-version:
+        description: >-
+          Pin the engine version. Omit to resolve it from the template
+          frontmatter, which is the normal path.
+        required: false
+        type: string
+      working-directory:
+        description: Directory holding the template.
+        required: false
+        default: "."
+        type: string
+      skip-readme:
+        description: >-
+          Skip the README check. For a port whose README is hand-written rather
+          than derived from the catalogue.
+        required: false
+        default: false
+        type: boolean
+      skip-preview:
+        description: Skip the preview check.
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: setup
+        uses: sp-night/sp-night@v1
+        with:
+          spn-version: ${{ inputs.spn-version }}
+          working-directory: ${{ inputs.working-directory }}
+
+      # The rule the project rests on: a mapping asks for a role, never a colour.
+      - name: mapping asks for roles
+        working-directory: ${{ inputs.working-directory }}
+        run: spn lint
+
+      - name: theme files are up to date
+        working-directory: ${{ inputs.working-directory }}
+        run: spn gen --check --app ${{ inputs.port }}
+
+      - name: README is up to date
+        if: ${{ !inputs.skip-readme }}
+        working-directory: ${{ inputs.working-directory }}
+        run: spn readme --check ${{ inputs.port }}
+
+      - name: previews are up to date
+        if: ${{ !inputs.skip-preview }}
+        working-directory: ${{ inputs.working-directory }}
+        run: spn preview --check ${{ inputs.port }}
+
+      - name: summary
+        if: always()
+        run: |
+          {
+            echo "### ${{ inputs.port }}"
+            echo
+            echo "engine \`${{ steps.setup.outputs.version }}\`, resolved from the template frontmatter."
+          } >> "$GITHUB_STEP_SUMMARY"

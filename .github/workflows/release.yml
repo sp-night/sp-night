@@ -1,0 +1,57 @@
+name: release
+
+# Tag a version and the binaries appear. The setup action resolves a template's
+# `^1.0` against these releases, so tagging is what actually publishes an engine
+# change to the ports.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      # Never ship a palette that has not been measured.
+      - name: contrast
+        run: go run ./cmd/spn check -v --palette palette
+
+      - run: go test ./... -count=1
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Keep the major tag (v1) pointing at the newest release inside that major, so
+  # a port can say @v1 in its workflow and never edit it again.
+  major-tag:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: move the major tag
+        run: |
+          set -euo pipefail
+          major="${GITHUB_REF_NAME%%.*}"   # v1.2.3 -> v1
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "$major" "$GITHUB_REF_NAME"
+          git push -f origin "$major"
