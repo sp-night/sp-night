@@ -236,9 +236,32 @@ func TestScaffoldProducesAWorkingStub(t *testing.T) {
 	for _, f := range files {
 		byPath[f.Path] = string(f.Content)
 	}
-	for _, want := range []string{p.Template, ".github/workflows/theme.yml", "renovate.json"} {
+	for _, want := range []string{p.Template, ".github/workflows/theme.yml", ".gitattributes", "renovate.json"} {
 		if _, ok := byPath[want]; !ok {
 			t.Errorf("scaffold is missing %s", want)
+		}
+	}
+
+	// The generated files have to be marked generated, and the mapping named as
+	// the file a regeneration diff should lead with.
+	attrs := byPath[".gitattributes"]
+	for _, want := range []string{
+		"themes/** linguist-generated=true",
+		"assets/*.svg linguist-generated=true",
+		"README.md linguist-generated=true",
+		"*.tmpl linguist-detectable=false",
+		p.Template,
+	} {
+		if !strings.Contains(attrs, want) {
+			t.Errorf(".gitattributes omits %q:\n%s", want, attrs)
+		}
+	}
+
+	// The copies in the shipped ports carry terminal escape codes, pasted in from
+	// a coloured shell. Nothing the scaffold writes may contain one.
+	for path, content := range byPath {
+		if strings.ContainsRune(content, 0x1b) {
+			t.Errorf("%s contains an ANSI escape", path)
 		}
 	}
 
