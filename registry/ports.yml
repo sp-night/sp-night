@@ -284,6 +284,172 @@ ports:
           - {t: "accents    ", r: ui.fg}
           - {t: "separation ΔE ≥ 0.10 or ΔL ≥ 0.04", r: ui.fg_dim}
 
+  - slug: alacritty
+    name: Alacritty
+    group: terminal
+    blurb: The 16-colour ANSI mapping, plus the cursor, vi mode, search hits, hints, the footer bar and the line indicator.
+    homepage: https://alacritty.org/
+    repo: https://github.com/sp-night/alacritty
+    install: ~/.config/alacritty/themes/sp_night_{flavor}.toml
+    activate: import = ["~/.config/alacritty/themes/sp_night_{flavor}.toml"]
+    note: >-
+      Alacritty pulls a theme in through `import`, which moved into `[general]`
+      in 0.14. On 0.13 it is a top-level `import = [...]`, and TOML wants it
+      above every table header either way.
+    template: alacritty.toml.tmpl
+    mapping_closer: which colour the focused search hit takes
+
+    install_guide: |-
+      Alacritty imports a theme from its own config, so the file sits beside
+      `alacritty.toml` and nothing overwrites it. The config format has been
+      [TOML since 0.13](https://github.com/alacritty/alacritty/blob/master/CHANGELOG.md).
+
+      Grab the flavour you want (or all three):
+
+      ```sh
+      mkdir -p ~/.config/alacritty/themes
+      curl -Lo ~/.config/alacritty/themes/sp_night_noite.toml \
+        https://raw.githubusercontent.com/sp-night/alacritty/main/themes/sp_night_noite.toml
+      ```
+
+      Then import it from `~/.config/alacritty/alacritty.toml`:
+
+      ```toml
+      [general]
+      import = ["~/.config/alacritty/themes/sp_night_noite.toml"]
+      ```
+
+      Alacritty watches its configuration and reloads on save, so the colours
+      change as you write the file. If yours does not, set
+      `general.live_config_reload = true`.
+
+      > [!NOTE]
+      > `import` lived at the top level until Alacritty 0.14 moved it into
+      > `[general]`. On 0.13, drop the `[general]` header and keep the bare
+      > `import = [...]`. TOML reads a bare key as belonging to whatever table
+      > precedes it, so it has to come before every `[...]` header in the file.
+
+      Prefer a checkout? Clone and copy, the files are plain text and there is no build:
+
+      ```sh
+      git clone https://github.com/sp-night/alacritty.git
+      cp alacritty/themes/*.toml ~/.config/alacritty/themes/
+      ```
+
+      Three keys the theme deliberately leaves alone, all for one reason: this
+      project does not ship a colour nobody measured.
+
+      `[colors.dim]` is absent. The palette's bright ladder covers the six ANSI
+      accents and stops there, so there is no measured dim set to write, and
+      Alacritty derives faint text on its own.
+
+      `primary.bright_foreground` is absent. The role layer has no colour above
+      `ui.fg` for text, and Alacritty falls back to `foreground`, which is the
+      value that key would have carried anyway.
+
+      `draw_bold_text_with_bright_colors` is absent because it is behaviour
+      rather than colour. Set it in your own config if you want bold text to use
+      `[colors.bright]`; the theme will not decide that for you.
+
+    mapping:
+      - key: "`colors.normal.*` / `colors.bright.*`"
+        role: "`ansi.*`"
+        meaning: the full 16-colour ANSI mapping
+      - key: "`colors.primary.background` / `.foreground`"
+        role: "`ui.bg` / `ui.fg`"
+        meaning: "*laje* under the main text"
+      - key: "`colors.primary.dim_foreground`"
+        role: "`ui.fg_dim`"
+        meaning: faint text recedes to the measured dim, not to a multiplier
+      - key: "`colors.cursor.cursor` / `.text`"
+        role: "`ui.cursor` / `ui.on_accent`"
+        meaning: the *sódio* cursor, dark text inside it
+      - key: "`colors.vi_mode_cursor.cursor` / `.text`"
+        role: "`ui.accent_alt` / `ui.on_accent`"
+        meaning: vi mode is a different mode, so the cursor changes hue rather than brightness
+      - key: "`colors.selection.background` / `.text`"
+        role: "`ui.selection` / `ui.fg`"
+        meaning: "*vidro*, glass reflecting the street"
+      - key: "`colors.search.matches`"
+        role: "`ui.match` / `ui.on_accent`"
+        meaning: every hit in *táxi*, the colour this theme uses for a match
+      - key: "`colors.search.focused_match`"
+        role: "`ui.accent` / `ui.on_accent`"
+        meaning: the hit you are on takes the signature colour, so the cursor is never lost in the crowd
+      - key: "`colors.hints.start` / `.end`"
+        role: "`ui.accent` / `ui.panel`"
+        meaning: the key to press next is loud, the rest of the label stays concrete
+      - key: "`colors.footer_bar`"
+        role: "`ui.panel` / `ui.fg`"
+        meaning: the search prompt and URI preview sit on exposed concrete
+      - key: "`colors.line_indicator`"
+        role: "`ui.bg_deep` / `ui.fg_dim`"
+        meaning: the position readout recedes into the *vão*
+
+    preview:
+      title: alacritty - sp_night_{flavor}
+      swatches:
+        label: colors.normal / colors.bright
+        roles:
+          - ansi.black
+          - ansi.red
+          - ansi.green
+          - ansi.yellow
+          - ansi.blue
+          - ansi.magenta
+          - ansi.cyan
+          - ansi.white
+          - ansi.bright_black
+          - ansi.bright_red
+          - ansi.bright_green
+          - ansi.bright_yellow
+          - ansi.bright_blue
+          - ansi.bright_magenta
+          - ansi.bright_cyan
+          - ansi.bright_white
+      body:
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "(main) ", r: ui.match}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "cat themes/sp_night_{flavor}.toml", r: ui.fg}
+        - - {t: "[colors.primary]", r: syntax.type}
+        - - {t: "background", r: syntax.attribute}
+          - {t: "     = ", r: syntax.operator}
+          - {t: "\"{r:ui.bg}\"", r: syntax.string}
+        - - {t: "foreground", r: syntax.attribute}
+          - {t: "     = ", r: syntax.operator}
+          - {t: "\"{r:ui.fg}\"", r: syntax.string}
+        - - {t: "dim_foreground", r: syntax.attribute}
+          - {t: " = ", r: syntax.operator}
+          - {t: "\"{r:ui.fg_dim}\"", r: syntax.string}
+        - []
+        - - {t: "[colors.cursor]", r: syntax.type}
+        - - {t: "cursor", r: syntax.attribute}
+          - {t: " = ", r: syntax.operator}
+          - {t: "\"{r:ui.cursor}\"", r: syntax.string}
+        - - {t: "text", r: syntax.attribute}
+          - {t: "   = ", r: syntax.operator}
+          - {t: "\"{r:ui.on_accent}\"", r: syntax.string}
+        - []
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "grep -n import ~/.config/alacritty/alacritty.toml", r: ui.fg}
+        - - {t: "2:", r: ui.fg_muted}
+          - {t: "import", r: syntax.attribute}
+          - {t: " = [", r: syntax.punctuation}
+          - {t: "\"~/.config/alacritty/themes/sp_night_{flavor}.toml\"", r: syntax.string}
+          - {t: "]", r: syntax.punctuation}
+        - []
+        - - {t: "~/sp-night ", r: ui.accent}
+          - {t: "❯ ", r: ui.accent_alt}
+          - {t: "spn check", r: ui.fg}
+        - - {t: "✓ ", r: diagnostic.ok}
+          - {t: "contrast   ", r: ui.fg}
+          - {t: "70 pairs per flavour, AA on every surface", r: ui.fg_dim}
+        - - {t: "✓ ", r: diagnostic.ok}
+          - {t: "accents    ", r: ui.fg}
+          - {t: "separation ΔE ≥ 0.10 or ΔL ≥ 0.04", r: ui.fg_dim}
+
   - slug: eza
     name: eza
     group: shell
