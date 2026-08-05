@@ -27,6 +27,7 @@ func Scaffold(p registry.Port) ([]render.File, error) {
 	files := []render.File{
 		{Path: p.Template, Content: []byte(mappingStub(p))},
 		{Path: ".github/workflows/theme.yml", Content: []byte(workflow(p))},
+		{Path: ".gitattributes", Content: []byte(gitAttributes(p))},
 		{Path: "renovate.json", Content: []byte(renovateConfig)},
 		{Path: ".editorconfig", Content: []byte(editorConfig)},
 		{Path: ".gitignore", Content: []byte(gitignore)},
@@ -99,6 +100,32 @@ jobs:
     with:
       port: %s
 `, p.Template, p.Slug)
+}
+
+// gitAttributes marks the derived files as such. It matters for one reason: a
+// regeneration pull request should lead with the change to the mapping, which is
+// the decision someone made, instead of burying it under a few thousand lines of
+// hex. The files are still verified either way, because `spn gen --check` fails
+// if any of them drifts.
+//
+// It lives in the scaffold rather than being copied between ports because it was
+// copied between ports, and the copies carried terminal escape codes in from the
+// shell they were pasted out of.
+func gitAttributes(p registry.Port) string {
+	return fmt.Sprintf(`# Everything here except the mapping is generated.
+#
+# Marking it as such collapses it in a diff, so a regeneration pull request leads
+# with the change to %s, the decision someone made, instead of burying it under a
+# few thousand lines of hex. The files are still verified: `+"`spn gen --check`"+`
+# fails if any of them drifts from the mapping.
+themes/** linguist-generated=true
+assets/*.svg linguist-generated=true
+README.md linguist-generated=true
+
+# The mapping is the one hand-written file, but a Go template is not this
+# repository's language. A colourscheme port does not have one.
+*.tmpl linguist-detectable=false
+`, p.Template)
 }
 
 const renovateConfig = `{
