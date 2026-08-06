@@ -59,10 +59,10 @@ func TestFlavorLookup(t *testing.T) {
 	}
 }
 
-func TestEveryFlavorDeclaresTheSame22Colours(t *testing.T) {
+func TestEveryFlavorDeclaresTheSame23Colours(t *testing.T) {
 	p, _ := mustLoad(t)
-	if len(p.Order) != 22 {
-		t.Fatalf("palette declares %d colours, want 22", len(p.Order))
+	if len(p.Order) != 23 {
+		t.Fatalf("palette declares %d colours, want 23", len(p.Order))
 	}
 	for _, f := range p.Flavors {
 		if len(f.Colors) != len(p.Order) {
@@ -126,6 +126,25 @@ func TestDocKeysAreNotRoles(t *testing.T) {
 			if strings.HasPrefix(role, "$") {
 				t.Errorf("role %s.%s is documentation and should have been dropped", group, role)
 			}
+		}
+	}
+}
+
+// fg_vivo is the same lift applied to the text ramp: it is what
+// ansi.bright_white and ui.fg_bright resolve to, so bold default text in a
+// terminal is genuinely brighter than fg instead of equal to it. The six
+// accent brights all land between 0.0585 and 0.0625; the text ramp is held to
+// the same band, and 0.06 is also the ceiling — asking for more starts
+// desaturating fg in noite, where the gamut runs out first.
+func TestFgVivoLiftsFgByTheSameAmountAsAnAccent(t *testing.T) {
+	p, _ := mustLoad(t)
+	const lo, hi = 0.055, 0.065
+	for _, f := range p.Flavors {
+		base := color.MustParseHex(f.Colors["fg"]).Oklab().L
+		vivo := color.MustParseHex(f.Colors["fg_vivo"]).Oklab().L
+		if d := vivo - base; d < lo || d > hi {
+			t.Errorf("flavor %q: fg_vivo lifts fg by %.4f, want between %.3f and %.3f",
+				f.ID, d, lo, hi)
 		}
 	}
 }

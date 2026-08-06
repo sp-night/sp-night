@@ -47,7 +47,7 @@ func TestPreviewIsWellFormedXML(t *testing.T) {
 }
 
 // Synthetic means drawn from the palette. Every colour in the file has to be one
-// of this flavour's 22, or the preview is showing something the user will not get.
+// of this flavour's 23, or the preview is showing something the user will not get.
 func TestPreviewOnlyUsesThisFlavoursColours(t *testing.T) {
 	pal, roles, reg, _ := fixtures(t)
 	for _, p := range reg.Ports {

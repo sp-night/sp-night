@@ -28,7 +28,7 @@ import (
 // average:
 //
 //   - laje, vao, concreto — where you read code for hours (default background,
-//     popup/float, cursorline). Accents and fg need AA 4.5:1.
+//     popup/float, cursorline). Accents, fg and fg_vivo need AA 4.5:1.
 //   - vidro — selection and visual mode. A transient state, and in it you are
 //     looking at shape, not reading. 3:1 is enough, but it is required.
 //   - fg_muted (line numbers, indent guides) is ornament: 3:1, warning only.
@@ -126,7 +126,11 @@ func Flavor(pal *theme.Palette, f theme.Flavor) Report {
 	for _, bg := range Surfaces {
 		want := textLevel[bg]
 
+		// fg_vivo is the bright end of the text ramp — bold default text in a
+		// terminal, ansi.bright_white. It is read, not ornament, so it is held
+		// to the same floor as fg.
 		add("fg", bg, want, true)
+		add("fg_vivo", bg, want, true)
 		for _, a := range accents {
 			add(a, bg, want, true)
 		}

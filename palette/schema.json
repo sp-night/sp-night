@@ -42,6 +42,7 @@
           "concreto",
           "vidro",
           "fiacao",
+          "fg_vivo",
           "fg",
           "fg_dim",
           "fg_muted",
@@ -76,6 +77,7 @@
             "concreto",
             "vidro",
             "fiacao",
+            "fg_vivo",
             "fg",
             "fg_dim",
             "fg_muted",
@@ -134,6 +136,7 @@
               "concreto",
               "vidro",
               "fiacao",
+              "fg_vivo",
               "fg",
               "fg_dim",
               "fg_muted",
@@ -171,6 +174,10 @@
                 "pattern": "^#[0-9a-f]{6}$"
               },
               "fiacao": {
+                "type": "string",
+                "pattern": "^#[0-9a-f]{6}$"
+              },
+              "fg_vivo": {
                 "type": "string",
                 "pattern": "^#[0-9a-f]{6}$"
               },

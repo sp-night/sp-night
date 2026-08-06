@@ -27,13 +27,14 @@ func TestShippedPaletteClearsEveryGate(t *testing.T) {
 	}
 }
 
-// 70 is the number the website's /spec page publishes. It is 4 surfaces ×
-// (fg + 8 accents + 6 brights + fg_dim + fg_muted) + fiacao on 2 surfaces.
-func TestSeventyPairsPerFlavour(t *testing.T) {
+// 74 is the number the website's /spec page publishes. It is 4 surfaces ×
+// (fg + fg_vivo + 8 accents + 6 brights + fg_dim + fg_muted) + fiacao on 2
+// surfaces.
+func TestSeventyFourPairsPerFlavour(t *testing.T) {
 	pal := mustLoad(t)
 	for _, f := range pal.Flavors {
-		if got := len(Flavor(pal, f).Checks); got != 70 {
-			t.Errorf("flavor %q measured %d pairs, want 70", f.ID, got)
+		if got := len(Flavor(pal, f).Checks); got != 74 {
+			t.Errorf("flavor %q measured %d pairs, want 74", f.ID, got)
 		}
 	}
 }
@@ -193,7 +194,7 @@ func TestReportNamesFlavourAndCounts(t *testing.T) {
 			t.Errorf("report does not mention flavour %q", f.ID)
 		}
 	}
-	if !strings.Contains(out, "70 pairs") {
+	if !strings.Contains(out, "74 pairs") {
 		t.Error("report does not state the pair count")
 	}
 }
