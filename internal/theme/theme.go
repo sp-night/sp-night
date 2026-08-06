@@ -26,35 +26,52 @@ import (
 // Group is a semantic band of the palette. The bands are not decoration: the
 // audits need to know which keys are accents (they get measured against each
 // other) and which are bright ANSI (they get measured against the surfaces).
+//
+// They live in sp_night.json rather than in this file because the website
+// vendors the contract and needs the same partition to publish it. Declared
+// here, the site had to re-type it, and a colour the contract declared but the
+// site's copy did not know about vanished from the published palette without a
+// single test failing.
 type Group struct {
-	Title string
+	// ID is the stable handle the code and the website address a band by;
+	// Label is what a reader sees.
+	ID    string
+	Label string
 	Keys  []string
 }
 
-// Groups partitions the palette. Validate proves this partition matches the
-// keys actually declared in sp_night.json, so the two can never drift.
-var Groups = []Group{
-	{"Surfaces", []string{"vao", "laje", "concreto", "vidro", "fiacao"}},
-	{"Text", []string{"fg_vivo", "fg", "fg_dim", "fg_muted"}},
-	{"Accents", []string{"brasa", "sodio", "taxi", "ibira", "estaiada", "sereno", "marginal", "temporal"}},
-	{"Bright ANSI", []string{"brasa_vivo", "taxi_vivo", "ibira_vivo", "sereno_vivo", "marginal_vivo", "temporal_vivo"}},
-}
+// The two bands the audit addresses by name: accents get measured against each
+// other, brights against the surfaces. Everything else about a group is data.
+const (
+	GroupAccents = "accents"
+	GroupVivo    = "vivo"
+)
 
-// GroupKeys returns the palette keys of a band, panicking on a title that does
-// not exist — a typo in a caller, not a runtime condition.
-func GroupKeys(title string) []string {
-	for _, g := range Groups {
-		if g.Title == title {
-			return g.Keys
+// Group looks a band up by id.
+func (p *Palette) Group(id string) (Group, bool) {
+	for _, g := range p.Groups {
+		if g.ID == id {
+			return g, true
 		}
 	}
-	panic("theme: no palette group titled " + title)
+	return Group{}, false
 }
 
-// AccentKeys and BrightKeys are derived from Groups, so renaming or
-// reordering an accent never requires editing a second list in the audit.
-func AccentKeys() []string { return GroupKeys("Accents") }
-func BrightKeys() []string { return GroupKeys("Bright ANSI") }
+// GroupKeys returns the palette keys of a band, panicking on an id that does
+// not exist — Validate has already proved the canonical ones are present, so
+// this is a typo in a caller rather than a runtime condition.
+func (p *Palette) GroupKeys(id string) []string {
+	g, ok := p.Group(id)
+	if !ok {
+		panic("theme: no palette group with id " + id)
+	}
+	return g.Keys
+}
+
+// AccentKeys and BrightKeys read the partition, so moving a colour between
+// bands never requires editing a second list in the audit.
+func (p *Palette) AccentKeys() []string { return p.GroupKeys(GroupAccents) }
+func (p *Palette) BrightKeys() []string { return p.GroupKeys(GroupVivo) }
 
 // Flavor is one way of looking at the city.
 type Flavor struct {
@@ -80,7 +97,10 @@ type Palette struct {
 
 	// Order is the palette keys in declaration order. Go maps have none, and
 	// every output — files, docs, previews — has to be stable.
-	Order   []string
+	Order []string
+
+	// Groups partitions Order into semantic bands, in declaration order.
+	Groups  []Group
 	Flavors []Flavor
 }
 
@@ -119,6 +139,11 @@ type wireFlavor struct {
 	Colors      map[string]string `json:"colors"`
 }
 
+type wireGroup struct {
+	Label string   `json:"label"`
+	Keys  []string `json:"keys"`
+}
+
 type wirePalette struct {
 	Name        string                `json:"name"`
 	Label       string                `json:"label"`
@@ -126,6 +151,7 @@ type wirePalette struct {
 	Author      string                `json:"author"`
 	URL         string                `json:"url"`
 	Meaning     map[string]string     `json:"meaning"`
+	Groups      map[string]wireGroup  `json:"groups"`
 	Flavors     map[string]wireFlavor `json:"flavors"`
 	rawFlavors  json.RawMessage
 }
@@ -178,6 +204,7 @@ func parsePalette(data []byte) (*Palette, error) {
 		return nil, fmt.Errorf("sp_night.json: %w", err)
 	}
 	var probe struct {
+		Groups  json.RawMessage `json:"groups"`
 		Flavors json.RawMessage `json:"flavors"`
 	}
 	if err := json.Unmarshal(data, &probe); err != nil {
@@ -192,6 +219,17 @@ func parsePalette(data []byte) (*Palette, error) {
 	p := &Palette{
 		Name: w.Name, Label: w.Label, Description: w.Description,
 		Author: w.Author, URL: w.URL, Meaning: w.Meaning,
+	}
+
+	// Band order is the declaration order too: it is how the palette reads in
+	// the file, in `spn palette`, and on the website.
+	groupIDs, err := objectKeys(probe.Groups)
+	if err != nil {
+		return nil, fmt.Errorf("sp_night.json: groups: %w", err)
+	}
+	for _, id := range groupIDs {
+		wg := w.Groups[id]
+		p.Groups = append(p.Groups, Group{ID: id, Label: wg.Label, Keys: wg.Keys})
 	}
 	for _, id := range flavorIDs {
 		wf := w.Flavors[id]
@@ -289,24 +327,45 @@ func (p *Palette) Validate() error {
 		return fmt.Errorf("sp_night.json: no colours defined")
 	}
 
-	// Groups must cover the declared keys exactly — no key ungrouped, no
-	// group naming a key that no longer exists.
+	// The bands the audit addresses by name have to be there, or it would
+	// measure an empty list and report a clean palette it never looked at.
+	for _, id := range []string{GroupAccents, GroupVivo} {
+		if _, ok := p.Group(id); !ok {
+			return fmt.Errorf("sp_night.json: groups declares no %q band, which the audit measures", id)
+		}
+	}
+	for _, g := range p.Groups {
+		if g.Label == "" {
+			return fmt.Errorf("sp_night.json: group %q has no label", g.ID)
+		}
+		if len(g.Keys) == 0 {
+			return fmt.Errorf("sp_night.json: group %q lists no colours", g.ID)
+		}
+	}
+
+	// The bands must cover the declared colours exactly — no colour outside a
+	// band, no band naming a colour that no longer exists, nothing listed
+	// twice. This is the check that would have caught a colour added to the
+	// palette and forgotten in the partition, which is how it disappears from
+	// everything that walks the groups.
 	var grouped []string
-	for _, g := range Groups {
-		grouped = append(grouped, g.Keys...)
+	for _, g := range p.Groups {
+		for _, k := range g.Keys {
+			if slices.Contains(grouped, k) {
+				return fmt.Errorf("sp_night.json: colour %q is in more than one group", k)
+			}
+			grouped = append(grouped, k)
+		}
 	}
 	for _, k := range p.Order {
 		if !slices.Contains(grouped, k) {
-			return fmt.Errorf("sp_night.json: colour %q is in no group in theme.Groups", k)
+			return fmt.Errorf("sp_night.json: colour %q is in no group", k)
 		}
 	}
 	for _, k := range grouped {
 		if !slices.Contains(p.Order, k) {
-			return fmt.Errorf("theme.Groups names %q, which sp_night.json does not declare", k)
+			return fmt.Errorf("sp_night.json: group names %q, which no flavour declares", k)
 		}
-	}
-	if len(grouped) != len(p.Order) {
-		return fmt.Errorf("theme.Groups lists %d colours, sp_night.json declares %d", len(grouped), len(p.Order))
 	}
 
 	for _, f := range p.Flavors {

@@ -124,7 +124,7 @@ workflow file.
 a preview. The previews are synthetic SVGs drawn from the palette, so they cannot
 show a colour the user will not get.
 
-**Contrast is a gate, not a promise.** 70 pairs per flavour, measured every
+**Contrast is a gate, not a promise.** 74 pairs per flavour, measured every
 build. The floor depends on what the surface is: `laje`, `vao` and `concreto`
 demand AA 4.5:1 because that is where you read code for hours; `vidro` — the
 selection — demands 3:1, because there you are looking at shape. Ornament and

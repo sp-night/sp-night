@@ -9,9 +9,44 @@
     "author",
     "url",
     "meaning",
+    "groups",
     "flavors"
   ],
   "additionalProperties": false,
+  "$defs": {
+    "colorKey": {
+      "description": "Um nome da paleta. Esta lista é a única no schema: meaning, groups, roles e as cores de cada flavor todas apontam para cá, então uma cor nova se escreve aqui e em flavors.*.colors.required, não em quatro lugares.",
+      "enum": [
+        "vao",
+        "laje",
+        "concreto",
+        "vidro",
+        "fiacao",
+        "fg_vivo",
+        "fg",
+        "fg_dim",
+        "fg_muted",
+        "brasa",
+        "sodio",
+        "taxi",
+        "ibira",
+        "estaiada",
+        "sereno",
+        "marginal",
+        "temporal",
+        "brasa_vivo",
+        "taxi_vivo",
+        "ibira_vivo",
+        "sereno_vivo",
+        "marginal_vivo",
+        "temporal_vivo"
+      ]
+    },
+    "hex": {
+      "type": "string",
+      "pattern": "^#[0-9a-f]{6}$"
+    }
+  },
   "properties": {
     "$schema": {
       "type": "string"
@@ -36,34 +71,38 @@
     "meaning": {
       "type": "object",
       "propertyNames": {
-        "enum": [
-          "vao",
-          "laje",
-          "concreto",
-          "vidro",
-          "fiacao",
-          "fg_vivo",
-          "fg",
-          "fg_dim",
-          "fg_muted",
-          "brasa",
-          "sodio",
-          "taxi",
-          "ibira",
-          "estaiada",
-          "sereno",
-          "marginal",
-          "temporal",
-          "brasa_vivo",
-          "taxi_vivo",
-          "ibira_vivo",
-          "sereno_vivo",
-          "marginal_vivo",
-          "temporal_vivo"
-        ]
+        "$ref": "#/$defs/colorKey"
       },
       "additionalProperties": {
         "type": "string"
+      }
+    },
+    "groups": {
+      "type": "object",
+      "description": "As bandas semânticas da paleta, na ordem em que ela se lê. Elas particionam as cores: toda cor pertence a exatamente uma banda, e o motor recusa a paleta se sobrar ou faltar alguma. As bandas 'accents' e 'vivo' são as que a auditoria mede, e têm de existir.",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "label",
+          "keys"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "keys": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$ref": "#/$defs/colorKey"
+            }
+          }
+        }
       }
     },
     "roles": {
@@ -71,31 +110,7 @@
       "additionalProperties": {
         "type": "object",
         "additionalProperties": {
-          "enum": [
-            "vao",
-            "laje",
-            "concreto",
-            "vidro",
-            "fiacao",
-            "fg_vivo",
-            "fg",
-            "fg_dim",
-            "fg_muted",
-            "brasa",
-            "sodio",
-            "taxi",
-            "ibira",
-            "estaiada",
-            "sereno",
-            "marginal",
-            "temporal",
-            "brasa_vivo",
-            "taxi_vivo",
-            "ibira_vivo",
-            "sereno_vivo",
-            "marginal_vivo",
-            "temporal_vivo"
-          ]
+          "$ref": "#/$defs/colorKey"
         }
       },
       "description": "Camada semântica opcional aqui — no repositório ela vive em palette/roles.json, que o gerador carrega separado."
@@ -155,100 +170,11 @@
               "marginal_vivo",
               "temporal_vivo"
             ],
-            "additionalProperties": false,
-            "properties": {
-              "vao": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "laje": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "concreto": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "vidro": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "fiacao": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "fg_vivo": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "fg": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "fg_dim": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "fg_muted": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "brasa": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "sodio": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "taxi": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "ibira": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "estaiada": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "sereno": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "marginal": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "temporal": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "brasa_vivo": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "taxi_vivo": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "ibira_vivo": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "sereno_vivo": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "marginal_vivo": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              },
-              "temporal_vivo": {
-                "type": "string",
-                "pattern": "^#[0-9a-f]{6}$"
-              }
+            "propertyNames": {
+              "$ref": "#/$defs/colorKey"
+            },
+            "additionalProperties": {
+              "$ref": "#/$defs/hex"
             }
           }
         }

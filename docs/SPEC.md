@@ -40,6 +40,18 @@ itself styles still uses a role.
 
 ## The palette
 
+The four bands below are not headings in this document — they are the `groups`
+block of `sp_night.json`, and they **partition** the palette: every colour
+belongs to exactly one band, and the tool refuses a palette where one is
+missing, doubled or unknown.
+
+They are data rather than Go because the website vendors the contract and
+publishes it. When the partition lived in the tool, the site had to re-type it,
+and a colour the palette declared but the site's copy did not know about
+disappeared from the published palette with nothing failing anywhere. `accents`
+and `vivo` are the two bands the audit addresses by name; the rest of a band is
+its label and its members.
+
 ### Surfaces — names neutral about lightness
 
 These names describe **function** and depth, not a specific hex. That is what
@@ -237,6 +249,18 @@ decision to repaint them is the maintainer's. The accents' lightness ladder keep
 the list empty today.
 
 Run `spn check` before touching a colour.
+
+## Adding a colour
+
+1. Add it to `colors` in **every** flavour, and to `meaning`.
+2. Add it to the band it belongs to in `groups`.
+3. `spn check`, then `go test ./...`.
+
+Step 2 is not optional bookkeeping: a colour outside every band fails
+validation, because anything that walks the palette walks the bands. If it is
+text or an accent, decide the floor it has to clear — `internal/audit` names the
+keys it measures — and if it is a `_vivo`, it lifts its base by 0.06 Oklch
+lightness and the suite checks that it does.
 
 ## Adding a flavour
 
