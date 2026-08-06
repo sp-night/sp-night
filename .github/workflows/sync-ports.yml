@@ -279,6 +279,21 @@ jobs:
           cache-dependency-path: site/package-lock.json
       - working-directory: site
         run: npm ci
+
+      # The site's own derived assets, regenerated from the catalogue this job
+      # just copied in: the README's ports table, and an OG card per port.
+      #
+      # Without this the fan-out could not add a port. `npm run assets` was a
+      # by-hand step, and `tests/readme.test.ts` — correctly — fails when the
+      # README table does not list every port in the catalogue. So a new entry
+      # reaching this job made the gate below fail, and a failed gate opens no
+      # pull request: the one path that was supposed to publish a port was the
+      # one path that could not. Listing a port is meant to be what publishes
+      # it, and now it is.
+      - name: regenerate the site's derived assets
+        working-directory: site
+        run: npm run assets
+
       - working-directory: site
         run: npm run check && npm test && npm run build
 

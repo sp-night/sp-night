@@ -162,6 +162,26 @@ func runReadme(args []string) error {
 
 // runNew scaffolds a port repository: the mapping stub, the workflow, and the
 // files a repository needs before anything can be generated into it.
+// runEntry prints a starter catalogue entry. It is step 0 of adding a port, and
+// it deliberately reads nothing: the catalogue is where a port begins, so there
+// is no state yet to read from.
+func runEntry(args []string) error {
+	fs := flag.NewFlagSet("entry", flag.ContinueOnError)
+	if err := parseArgs(fs, args); err != nil {
+		return err
+	}
+	if fs.NArg() != 1 {
+		return errors.New("usage: spn entry <slug>")
+	}
+	slug := fs.Arg(0)
+
+	fmt.Print(port.Entry(slug))
+	fmt.Fprintf(os.Stderr, "\nPaste that under `ports:` in registry/ports.yml, replace the TODOs,\n"+
+		"then `spn registry` to check it. The preview is a starting point — rewrite\n"+
+		"the session once the port has a voice of its own.\n")
+	return nil
+}
+
 func runNew(args []string) error {
 	fs := flag.NewFlagSet("new", flag.ContinueOnError)
 	regPath, _ := registryFlags(fs)
