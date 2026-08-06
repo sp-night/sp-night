@@ -24,6 +24,20 @@ The canonical example is [`sp-night/ghostty`](https://github.com/sp-night/ghostt
 `registry/ports.yml` is what the README, the preview and the generated header all
 read from. Nothing can be generated for a port that is not listed.
 
+Start from a printed entry rather than a blank page:
+
+```sh
+spn entry <slug> >> registry/ports.yml
+```
+
+That writes every required field, a mapping table to extend, and a complete
+preview — the fake session, span by span, in the shape the shipped previews
+share. It validates as printed, so the entry can be checked in while the TODOs
+are still being replaced. The preview is a starting point and nothing more:
+rewrite the session once the port has a voice of its own, the way eza's did.
+
+The fields it leaves you:
+
 ```yaml
   - slug: kitty                 # also the repository name under the org
     name: kitty
@@ -135,31 +149,29 @@ Before pushing, confirm the generated header points at this port's repository an
 carries the install path and the activation line. If it does not, the catalogue
 entry is wrong — do not edit a generated file.
 
-## 5 — Link it on the website
+## 5 — The website, which is not a step
 
-The website lists ports from `sp-night.github.io/resources/ports.yml`. Add the
-entry there with the same `slug`, `name`, `group`, `blurb`, `install`,
-`activate`, `note`, `homepage` and `repo` as the engine's catalogue, then:
+There is nothing to do here, and nothing to edit. The website vendors this
+catalogue rather than keeping its own list, so merging step 1 to `main` is what
+publishes the port: the push triggers `sync-ports.yml`, whose `site` job copies
+`ports.yml` and `copy.yml` across, redraws the previews, regenerates the site's
+derived assets, runs its suite, and opens a pull request. Merging that deploys
+`/ports/<slug>` — a page built from the entry, with the install guide, the
+key-to-role table and a screenshot per flavour.
 
-```sh
-npm run check && npm test
-```
-
-The tests include the no-raw-hex rule — no hex outside `src/data/` — and assert
-that `repo` follows from `slug`. Commit as
-`feat(ports): link the <App> port as a shipped repo`, open a pull request, and
-merge. Deployment is automatic.
+Listing a port is publishing it. If you find yourself editing `src/data/` by
+hand, the change will disappear at the next sync without leaving a trace.
 
 ## Checklist
 
-- [ ] Listed in `registry/ports.yml`, with a `mapping` table and a `preview`
+- [ ] Listed in `registry/ports.yml` (start with `spn entry <slug>`), `spn registry` clean
 - [ ] `spn lint` clean — the mapping asks for roles, never colours
 - [ ] `spn gen --check`, `spn readme --check`, `spn preview --check` all clean
 - [ ] Three flavours present (noite, garoa, jaragua)
 - [ ] Generated header points at this port's repository
 - [ ] `.github/workflows/theme.yml` calls the reusable workflow
 - [ ] Branch `feat/<slug>-port`, Conventional Commits, merged via pull request
-- [ ] Website `ports.yml` updated, `npm run check && npm test` green
+- [ ] Catalogue merged to `main`, and the website's sync pull request merged
 
 ## When a port needs something the roles do not offer
 

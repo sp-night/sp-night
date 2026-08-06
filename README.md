@@ -102,21 +102,27 @@ jobs:
       port: ghostty
 ```
 
-Nothing there names an engine version. The mapping declares the range it is
-written against in its own frontmatter:
+Nothing there names an engine version. The mapping declares, in its own
+frontmatter, the exact engine it was generated with:
 
 ```yaml
 ---
 spn:
-  version: "^1.0"
+  version: "1.2.0"
   matrix: [flavor]
   filename: "themes/sp_night_{{ .Flavor }}"
 ---
 ```
 
-The workflow reads that and installs the right binary, and Renovate bumps the
-constraint in the template — one pull request per port, none of them touching a
-workflow file.
+The workflow reads that and installs exactly that binary, so the committed files
+and the version that produced them are one fact. Nobody edits the pin by hand:
+`spn new` writes the version that scaffolded the port, and from then on the
+release fan-out bumps it in the same pull request that regenerates the files.
+
+A range — `^1.0` was the original — resolves to whatever is newest, which sends
+a port's pull request from green to red because *the engine* released, with
+nothing in the port having changed. It also makes the Renovate rule inert: every
+`1.x` satisfies `^1.0`, so there is never anything to bump.
 
 ## The guarantees
 
