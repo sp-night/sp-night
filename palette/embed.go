@@ -10,7 +10,7 @@ package palette
 
 import _ "embed"
 
-// SpNight is palette/sp_night.json — 22 colours per flavour, and nothing else
+// SpNight is palette/sp_night.json — 23 colours per flavour, and nothing else
 // in the project is allowed to spell a hex.
 //
 //go:embed sp_night.json
