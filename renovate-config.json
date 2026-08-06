@@ -1,34 +1,13 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "description": "Shared Renovate preset for SP Night port repositories. A port extends this and gets engine bumps for free.",
+  "description": "Shared Renovate preset for SP Night port repositories. Engine bumps are NOT handled here — the engine's release fan-out pins each mapping and regenerates it in the same pull request, because a pin bumped without regenerating cannot pass the port's own CI. This preset covers the ordinary infrastructure: GitHub Actions.",
   "extends": [
     "config:recommended",
     ":semanticCommits",
     ":semanticCommitTypeAll(chore)"
   ],
   "labels": ["dependencies"],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "The engine version a port's mapping is written against, declared in its template frontmatter. Renovate does not know what a .tmpl is, so it is matched explicitly — this is what turns one engine release into one PR per port.",
-      "managerFilePatterns": ["/\\.tmpl$/"],
-      "matchStrings": [
-        "spn:[\\s\\S]*?version:\\s*[\"'](?<currentValue>[^\"']+)[\"']"
-      ],
-      "depNameTemplate": "sp-night/sp-night",
-      "datasourceTemplate": "github-releases",
-      "versioningTemplate": "npm"
-    }
-  ],
   "packageRules": [
-    {
-      "description": "An engine bump changes what the theme files render to, so it must never merge unreviewed.",
-      "matchDepNames": ["sp-night/sp-night"],
-      "semanticCommitType": "chore",
-      "semanticCommitScope": "engine",
-      "commitMessageTopic": "the SP Night engine",
-      "automerge": false
-    },
     {
       "description": "GitHub Actions are infrastructure, not the theme. Group and automerge the minors.",
       "matchManagers": ["github-actions"],

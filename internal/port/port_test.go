@@ -227,7 +227,7 @@ func TestScaffoldProducesAWorkingStub(t *testing.T) {
 	_, _, reg, _ := fixtures(t)
 	p, _ := reg.Port("ghostty")
 
-	files, err := Scaffold(p)
+	files, err := Scaffold(p, "1.2.0")
 	if err != nil {
 		t.Fatalf("Scaffold: %v", err)
 	}
@@ -271,8 +271,11 @@ func TestScaffoldProducesAWorkingStub(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the scaffolded stub does not parse: %v", err)
 	}
-	if stub.Spec.Version != ScaffoldVersion {
-		t.Errorf("stub version = %q, want %q", stub.Spec.Version, ScaffoldVersion)
+	// A new mapping pins the exact engine that scaffolded it, so the files it
+	// produces and the version its CI installs are the same fact from the first
+	// commit — not a range that silently follows every later release.
+	if stub.Spec.Version != "1.2.0" {
+		t.Errorf("stub version = %q, want the version passed to Scaffold", stub.Spec.Version)
 	}
 	if !stub.Spec.PerFlavor() {
 		t.Error("the stub should render one file per flavour")

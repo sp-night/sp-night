@@ -22,10 +22,21 @@ on:
         description: Regenerate a single port (its registry slug). Empty means all of them.
         required: false
         type: string
+      version:
+        description: >-
+          The engine version to pin each mapping to. release.yml passes the tag it
+          just published. Empty leaves every pin untouched, which is what a
+          regeneration that is not a release wants.
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       only:
         description: Regenerate a single port (its registry slug). Empty means all of them.
+        required: false
+        type: string
+      version:
+        description: Pin each mapping to this engine version. Empty leaves the pins alone.
         required: false
         type: string
 
@@ -99,6 +110,15 @@ jobs:
         working-directory: engine
         run: go build -o "$RUNNER_TEMP/spn" ./cmd/spn
 
+      # The pin and the generated files are one fact: these files came out of
+      # that engine. Bumping the pin in the same pull request is what keeps a
+      # port's CI honest — it installs the pinned version and checks the files
+      # against it, so the two can never be measured apart.
+      - name: pin the engine this regeneration used
+        if: ${{ inputs.version != '' }}
+        working-directory: port
+        run: '"$RUNNER_TEMP/spn" pin ${{ inputs.version }}'
+
       - name: regenerate
         working-directory: port
         run: |
@@ -165,11 +185,21 @@ jobs:
           path: site
           token: ${{ secrets.PORTS_TOKEN }}
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
       - name: copy the contract
         run: |
           set -euo pipefail
           cp engine/palette/sp_night.json site/src/data/palette.json
           cp engine/palette/roles.json    site/src/data/roles.json
+          # The audit's own summary, so the site prints the floors and the pair
+          # count the tool enforces rather than a table someone typed alongside
+          # it. Generated, not part of the contract — hence produced here rather
+          # than copied from palette/.
+          (cd engine && go run ./cmd/spn check --json --palette palette) \
+            > site/src/data/contrast.json
           if git -C site diff --quiet; then
             echo "the website's copy already matches the contract"
           fi
@@ -195,11 +225,11 @@ jobs:
           branch: chore/sync-the-contract
           base: main
           commit-message: |
-            chore(data): sync the vendored palette and roles
+            chore(data): sync the vendored contract and audit summary
 
             Copied from the engine. The site remains the public URL of the
             contract; this keeps its copy from falling behind.
-          title: "chore(data): sync the vendored palette and roles"
+          title: "chore(data): sync the vendored contract and audit summary"
           body: |
             The vendored copy in `src/data/` no longer matched
             [`sp-night/sp-night`](https://github.com/sp-night/sp-night)
