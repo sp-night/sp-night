@@ -39,6 +39,19 @@ on:
         description: Pin each mapping to this engine version. Empty leaves the pins alone.
         required: false
         type: string
+  # A catalogue change is a website change: the site builds a page per port out
+  # of these two files, so listing a port here is what publishes it. Waiting for
+  # the next release to carry it across would mean the page for a port that
+  # already exists appears whenever the engine happens to ship.
+  #
+  # The fan-out is skipped on this path — see the `if` on `regenerate`. Editing
+  # the catalogue does not change what any port's mapping resolves to, so
+  # regenerating all of them would open a pull request per repository to say
+  # nothing.
+  push:
+    branches: [main]
+    paths:
+      - registry/**
 
 jobs:
   # The matrix comes from the catalogue, so a new port joins the fan-out by
@@ -71,6 +84,7 @@ jobs:
 
   regenerate:
     needs: plan
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -159,6 +173,11 @@ jobs:
   # /roles.json without depending on this repository at build time. That copy is
   # the one thing that can silently fall behind, so it gets the same treatment as
   # a port: a pull request when it no longer matches.
+  #
+  # It vendors the catalogue too, and draws the previews. The site builds a page
+  # per port out of them, so a port listed here reaches the website with an
+  # install guide, a key-to-role table and a screenshot rather than as a card
+  # somebody still has to write.
   site:
     runs-on: ubuntu-latest
     steps:
@@ -189,11 +208,16 @@ jobs:
         with:
           go-version: "1.26"
 
-      - name: copy the contract
+      - name: copy the contract and the catalogue
         run: |
           set -euo pipefail
           cp engine/palette/sp_night.json site/src/data/palette.json
           cp engine/palette/roles.json    site/src/data/roles.json
+          # The catalogue, whole. The site used to keep a reduced copy of it by
+          # hand — nine of the fields, retyped — while the install guide, the
+          # key-to-role table and the preview spec sat here unused.
+          cp engine/registry/ports.yml    site/src/data/ports.yml
+          cp engine/registry/copy.yml     site/src/data/copy.yml
           # The audit's own summary, so the site prints the floors and the pair
           # count the tool enforces rather than a table someone typed alongside
           # it. Generated, not part of the contract — hence produced here rather
@@ -204,9 +228,50 @@ jobs:
             echo "the website's copy already matches the contract"
           fi
 
-      # The website's own suite is the gate: it asserts the contrast policy and
-      # the no-raw-hex rule from the other side. A palette that breaks it must not
-      # reach the site even as a pull request.
+      # Drawn here rather than copied out of the port repositories, and that is
+      # the load-bearing choice: a preview is derived from the catalogue and the
+      # palette, both of which this job is copying in the same commit. Taking
+      # the committed SVGs from each port's main instead would ship the site a
+      # screenshot of the *previous* palette every time — the regenerate job
+      # above only opens pull requests against those repositories, so their main
+      # still holds the old colours while this runs.
+      #
+      # The slug list is derived here rather than taken from `plan`, which
+      # narrows to one port when `only` is passed. The site vendors the whole
+      # catalogue and asserts a preview exists for every entry in it, so a
+      # single-port regeneration must still leave the website complete. It also
+      # keeps this job independent of the fan-out: one port failing to
+      # regenerate should not hold up the contract reaching the site.
+      - name: draw the previews
+        run: |
+          set -euo pipefail
+          # Absolute: --out is resolved by the tool, which runs with the engine
+          # as its working directory. A relative path would land somewhere that
+          # only looks right because of how deep the checkout happens to be.
+          out="$(mktemp -d)"
+          mkdir -p site/public/previews
+
+          slugs=$(cd engine && go run ./cmd/spn registry --json \
+                    --registry registry/ports.yml --copy registry/copy.yml \
+                  | jq -r '.slugs[]')
+
+          for slug in $slugs; do
+            (cd engine && go run ./cmd/spn preview "$slug" \
+              --palette palette --registry registry/ports.yml --copy registry/copy.yml \
+              --out "$out/$slug")
+            for f in "$out/$slug"/preview-*.svg; do
+              flavour=$(basename "$f" .svg)
+              cp "$f" "site/public/previews/$slug-${flavour#preview-}.svg"
+            done
+          done
+          rm -rf "$out"
+
+      # The website's own suite is the gate, and it checks this side of the
+      # contract: the contrast policy, the no-raw-hex rule, that every role and
+      # palette key a preview paints with resolves, and that a preview exists
+      # for every port in the catalogue. A catalogue that has outrun the palette
+      # must not reach the site even as a pull request. `build` is included
+      # because the port pages are only rendered there.
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
@@ -215,7 +280,7 @@ jobs:
       - working-directory: site
         run: npm ci
       - working-directory: site
-        run: npm run check && npm test
+        run: npm run check && npm test && npm run build
 
       - name: open a pull request
         uses: peter-evans/create-pull-request@v7
@@ -225,15 +290,19 @@ jobs:
           branch: chore/sync-the-contract
           base: main
           commit-message: |
-            chore(data): sync the vendored contract and audit summary
+            chore(data): sync the vendored contract and catalogue
 
-            Copied from the engine. The site remains the public URL of the
-            contract; this keeps its copy from falling behind.
-          title: "chore(data): sync the vendored contract and audit summary"
+            Copied from the engine, with the previews redrawn. The site remains
+            the public URL of the contract, and builds a page per port out of
+            the catalogue; this keeps both from falling behind.
+          title: "chore(data): sync the vendored contract and catalogue"
           body: |
             The vendored copy in `src/data/` no longer matched
             [`sp-night/sp-night`](https://github.com/sp-night/sp-night)
             at `${{ github.sha }}`.
+
+            If this adds an entry to `ports.yml`, merging it publishes that
+            port's page at `/ports/<slug>`.
 
             `npm run check && npm test` passed against the new values before this
             was opened, so the contrast policy and the no-raw-hex rule still hold.
