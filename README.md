@@ -26,7 +26,7 @@
 
 This repository is the **contract** and the **tool**.
 
-The contract is two files: 22 named colours per flavour, and a role layer that
+The contract is two files: 23 named colours per flavour, and a role layer that
 says which colour means what. The tool turns a port's mapping into finished
 files, measures the palette against contrast floors, and refuses to build when it
 falls short.
@@ -38,7 +38,7 @@ adding a port, or retuning the palette.
 ## Three layers, one direction
 
 ```
-palette/sp_night.json     22 colours × 3 flavours — the only place a hex is written
+palette/sp_night.json     23 colours × 3 flavours — the only place a hex is written
         ↓
 palette/roles.json        every role names a palette key, never a colour
         ↓

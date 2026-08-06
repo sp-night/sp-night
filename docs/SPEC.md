@@ -11,7 +11,7 @@ This copy is the one the tool enforces.
 ## The three layers
 
 ```
-palette/sp_night.json     22 colours per flavour. São Paulo names.
+palette/sp_night.json     23 colours per flavour. São Paulo names.
         ↓
 palette/roles.json        semantic roles → a palette key
         ↓
@@ -57,6 +57,7 @@ lets one mapping serve every flavour.
 
 | key | use |
 |---|---|
+| `fg_vivo` | bold default text, `ansi.bright_white` |
 | `fg` | main text, identifiers, variables |
 | `fg_dim` | comments, punctuation, secondary text |
 | `fg_muted` | line numbers, guides, disabled text |
@@ -82,6 +83,20 @@ Oklch lightness — hue and chroma untouched. Bold text in a terminal uses brigh
 if bright equals normal, that information disappears. They live in the palette
 rather than being derived in a template, so they pass the same contrast audit as
 everything else.
+
+`fg_vivo` is that same lift applied to the text ramp, and it exists for the same
+reason. A target that separates default text from **bold** default text —
+Alacritty's `colors.primary.bright_foreground`, kitty's bold font colour — had
+nothing above `ui.fg` to point at, so a mapping had to write `fg` into both keys
+and claim a lift that was not there. `ui.fg_bright` names it, and
+`ansi.bright_white` resolves to it. `ansi.white` stays `fg_dim`: the ANSI table
+keeps the two ends of the ramp, and `fg` remains the terminal's plain
+`foreground`.
+
+For the text ramp +0.06 is the ceiling, not an inherited constant. `fg` in
+`noite` already sits at Oklch L 0.88; at +0.07 the blue channel clips and chroma
+starts to fall (0.028 → 0.023). At +0.06 all three flavours land the lift exactly
+with chroma intact — measured, which is what decided the value.
 
 `sodio` is the signature colour: cursor, active border, active workspace, clock,
 title. If a port needs "the theme's colour", that is it — **in a terminal or a
@@ -171,7 +186,7 @@ build** when one falls short. The floor depends on what the surface is:
 | `fg_muted` on any | 3.0:1, warning | ornament, not reading text |
 | `fiacao` on `laje`/`vao` | 1.5:1, warning | a border, not text |
 
-70 pairs per flavour. A gate that fails stops the build; a warning is reported.
+74 pairs per flavour. A gate that fails stops the build; a warning is reported.
 
 `fg_dim` is the delicate case: comments need full AA on `laje`. An unreadable
 comment is the number-one issue of every popular dark theme, and always because

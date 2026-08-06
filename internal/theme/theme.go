@@ -3,7 +3,7 @@
 //
 // Three layers, one direction:
 //
-//	palette   22 named colours per flavour — the only place a hex is written
+//	palette   23 named colours per flavour — the only place a hex is written
 //	roles     every role names a palette key, never a colour
 //	ports     a template asks for a role, never a colour
 //
@@ -35,7 +35,7 @@ type Group struct {
 // keys actually declared in sp_night.json, so the two can never drift.
 var Groups = []Group{
 	{"Surfaces", []string{"vao", "laje", "concreto", "vidro", "fiacao"}},
-	{"Text", []string{"fg", "fg_dim", "fg_muted"}},
+	{"Text", []string{"fg_vivo", "fg", "fg_dim", "fg_muted"}},
 	{"Accents", []string{"brasa", "sodio", "taxi", "ibira", "estaiada", "sereno", "marginal", "temporal"}},
 	{"Bright ANSI", []string{"brasa_vivo", "taxi_vivo", "ibira_vivo", "sereno_vivo", "marginal_vivo", "temporal_vivo"}},
 }
