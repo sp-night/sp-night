@@ -336,3 +336,54 @@ func isHex(s string) bool {
 	}
 	return true
 }
+
+// The starter entry has to be valid the moment it is pasted. If it were not,
+// the first thing a new port did would be to debug the scaffolding instead of
+// describing the app — and the TODOs are non-empty strings precisely so the
+// catalogue can be checked in while it is still being filled in.
+func TestEntryIsAValidCatalogueEntry(t *testing.T) {
+	doc := "groups:\n  terminal: Terminals\nports:\n" + Entry("tmux")
+
+	reg, err := registry.Load([]byte(doc))
+	if err != nil {
+		t.Fatalf("the starter entry should validate: %v", err)
+	}
+
+	p, ok := reg.Port("tmux")
+	if !ok {
+		t.Fatal("the starter entry did not load under its own slug")
+	}
+
+	// The preview is the part the entry exists to save someone writing, so it
+	// is the part worth asserting arrives complete.
+	if len(p.Preview.Body) == 0 {
+		t.Error("the starter entry has no preview body")
+	}
+	if len(p.Preview.Swatches.Roles) != len(ansiStrip) {
+		t.Errorf("swatch strip has %d roles, want %d", len(p.Preview.Swatches.Roles), len(ansiStrip))
+	}
+}
+
+// And it has to draw. A body that validates but names a role the palette does
+// not have would fail on the first `spn preview`, which is the next command
+// anyone runs.
+func TestEntryPreviewRenders(t *testing.T) {
+	pal, roles, _, _ := fixtures(t)
+
+	doc := "groups:\n  terminal: Terminals\nports:\n" + Entry("tmux")
+	reg, err := registry.Load([]byte(doc))
+	if err != nil {
+		t.Fatalf("registry.Load: %v", err)
+	}
+	p, _ := reg.Port("tmux")
+
+	for _, f := range pal.Flavors {
+		svg, err := SVG(p, pal, roles, f)
+		if err != nil {
+			t.Fatalf("%s: %v", f.ID, err)
+		}
+		if err := xml.Unmarshal(svg, new(struct{ XMLName xml.Name })); err != nil {
+			t.Errorf("%s: preview is not well-formed XML: %v", f.ID, err)
+		}
+	}
+}

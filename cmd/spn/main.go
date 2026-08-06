@@ -28,6 +28,7 @@ func commands() []command {
 		{"gen", "render a port's templates into finished theme files", runGen},
 		{"readme", "render a port's canonical README from the catalogue", runReadme},
 		{"preview", "draw the synthetic preview for each flavour", runPreview},
+		{"entry", "print a starter catalogue entry for a new port", runEntry},
 		{"new", "scaffold a new port repository", runNew},
 		{"lint", "check that templates ask for roles, not raw colours", runLint},
 		{"pin", "rewrite the engine version a mapping declares", runPin},
