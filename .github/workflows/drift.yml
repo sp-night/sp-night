@@ -80,7 +80,12 @@ jobs:
         run: |
           set -uo pipefail
           report=""
-          for pair in "palette:palette/sp_night.json" "roles:palette/roles.json"; do
+          # The audit summary is generated rather than stored, so it is produced
+          # here and compared like the other two: the site publishes the floors
+          # and the pair count, and those have to be the ones the tool enforces.
+          go run ./cmd/spn check --json --palette palette > "$RUNNER_TEMP/contrast-local.json"
+
+          for pair in "palette:palette/sp_night.json" "roles:palette/roles.json" "contrast:$RUNNER_TEMP/contrast-local.json"; do
             file="${pair%%:*}"
             local_file="${pair#*:}"
 

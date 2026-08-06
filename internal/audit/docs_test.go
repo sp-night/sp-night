@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -53,6 +54,28 @@ func TestTheDocsStateTheCountsTheCodeMeasures(t *testing.T) {
 						filepath.Base(name), m[0], c.want, c.what)
 				}
 			}
+		}
+	}
+}
+
+// SPEC.md also states the floors, as a table. That is the last mirror of the
+// policy left in this repository, so it gets checked the same way: every floor
+// the audit enforces has to appear in the document that promises it.
+//
+// Deliberately one-directional. The spec may phrase a floor as "4.5:1 (AA)" and
+// may mention a ratio the policy does not use while explaining why; what must
+// not happen is the policy holding a floor the spec never tells anyone about.
+func TestTheSpecStatesEveryFloorTheAuditEnforces(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("..", "..", "docs", "SPEC.md"))
+	if err != nil {
+		t.Fatalf("read SPEC.md: %v", err)
+	}
+	spec := string(body)
+
+	for _, rule := range Policy() {
+		want := fmt.Sprintf("%.1f:1", rule.Floor)
+		if !strings.Contains(spec, want) {
+			t.Errorf("the audit holds %s to %s, which SPEC.md never states", rule.Subject, want)
 		}
 	}
 }

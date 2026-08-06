@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"sort"
 	"strings"
 
@@ -59,6 +60,104 @@ var Surfaces = []string{surfaceDeep, surfaceMain, surfacePanel, surfaceRaised}
 // borderSurfaces are the surfaces a border is really drawn against. Measuring
 // fiacao against vidro — the selection colour — would not mean anything.
 var borderSurfaces = []string{surfaceDeep, surfaceMain}
+
+// Rule is one line of the contrast policy, as data.
+//
+// The policy is applied a few lines below, in Flavor. It is also *published* —
+// docs/SPEC.md states it, and the website prints it as a table. Both used to
+// re-type it, and a mirrored policy is a policy that can be wrong in public.
+// Emitting it means the site renders what the audit enforces.
+//
+// TestThePublishedPolicyIsThePolicyApplied proves this list and the measurements
+// agree, so it cannot drift from the code beside it either.
+type Rule struct {
+	// Subject is a surface for a "surface" rule — the floor everything read on
+	// it must clear — and a colour for a "foreground" rule, which overrides the
+	// surface for that one colour.
+	Subject string `json:"subject"`
+	Kind    string `json:"kind"`
+
+	// Surfaces is which backgrounds a foreground rule covers. Empty for a
+	// surface rule, whose subject is the background.
+	Surfaces []string `json:"surfaces,omitempty"`
+
+	Floor float64 `json:"floor"`
+	Gate  bool    `json:"gate"`
+}
+
+const (
+	KindSurface    = "surface"
+	KindForeground = "foreground"
+)
+
+// Policy returns the contrast policy in the order it is worth reading: the
+// backgrounds from deepest to raised, then the foregrounds that override them.
+//
+// fg_dim is why this cannot be four lines. Comments have to be comfortable on
+// the default background and only distinguishable on the rest, so it is AA on
+// laje and 3:1 elsewhere — a nuance the website used to carry as a sentence
+// under a table that contradicted it.
+func Policy() []Rule {
+	return []Rule{
+		{Subject: surfaceDeep, Kind: KindSurface, Floor: LevelAA, Gate: true},
+		{Subject: surfaceMain, Kind: KindSurface, Floor: LevelAA, Gate: true},
+		{Subject: surfacePanel, Kind: KindSurface, Floor: LevelAA, Gate: true},
+		{Subject: surfaceRaised, Kind: KindSurface, Floor: LevelLargeAA, Gate: true},
+
+		{Subject: "fg_dim", Kind: KindForeground, Surfaces: []string{surfaceMain},
+			Floor: LevelAA, Gate: true},
+		{Subject: "fg_dim", Kind: KindForeground,
+			Surfaces: []string{surfaceDeep, surfacePanel, surfaceRaised},
+			Floor:    LevelLargeAA, Gate: true},
+		{Subject: "fg_muted", Kind: KindForeground, Surfaces: Surfaces,
+			Floor: LevelLargeAA, Gate: false},
+		{Subject: "fiacao", Kind: KindForeground, Surfaces: borderSurfaces,
+			Floor: LevelNonText, Gate: false},
+	}
+}
+
+// RuleFor returns the rule that claims a measured pair: a foreground rule for
+// that colour on that surface if there is one, otherwise the surface's rule.
+func RuleFor(fg, bg string) (Rule, bool) {
+	rules := Policy()
+	for _, r := range rules {
+		if r.Kind == KindForeground && r.Subject == fg && slices.Contains(r.Surfaces, bg) {
+			return r, true
+		}
+	}
+	// A colour with any foreground rule is never governed by the surface, or the
+	// override would not be an override.
+	for _, r := range rules {
+		if r.Kind == KindForeground && r.Subject == fg {
+			return Rule{}, false
+		}
+	}
+	for _, r := range rules {
+		if r.Kind == KindSurface && r.Subject == bg {
+			return r, true
+		}
+	}
+	return Rule{}, false
+}
+
+// Summary is what the audit publishes about itself: how much it measures, and
+// the policy it measures against. The website vendors it so the numbers and the
+// table it prints come from the tool rather than from a sentence someone typed.
+type Summary struct {
+	PairsPerFlavor int      `json:"pairs_per_flavor"`
+	Flavors        []string `json:"flavors"`
+	Policy         []Rule   `json:"policy"`
+}
+
+// Summarise measures one flavour to count the pairs, since the count is a
+// consequence of the palette rather than a constant.
+func Summarise(pal *theme.Palette) Summary {
+	s := Summary{Policy: Policy(), Flavors: pal.FlavorIDs()}
+	if len(pal.Flavors) > 0 {
+		s.PairsPerFlavor = len(Flavor(pal, pal.Flavors[0]).Checks)
+	}
+	return s
+}
 
 // Check is one measured text/surface pair.
 type Check struct {
