@@ -8,10 +8,10 @@ import (
 	"github.com/sp-night/sp-night/registry"
 )
 
-// ScaffoldVersion is the tool range a freshly scaffolded mapping declares.
-// Renovate bumps it across every port at once, which is the whole reason the
-// constraint lives in the template rather than in each port's CI.
-const ScaffoldVersion = "^1.0"
+// FallbackVersion is what a mapping declares when the scaffolding binary does
+// not know its own version — a `go run` from a checkout rather than a release.
+// A range, because a dev build cannot honestly name a released version.
+const FallbackVersion = "^1.0"
 
 // Scaffold returns the files a new port repository starts with.
 //
@@ -19,13 +19,13 @@ const ScaffoldVersion = "^1.0"
 // the catalogue entry. The only thing left for a human is the mapping itself —
 // which key of the app means which role — and that is the one thing a human
 // should be deciding.
-func Scaffold(p registry.Port) ([]render.File, error) {
+func Scaffold(p registry.Port, spnVersion string) ([]render.File, error) {
 	if p.Template == "" {
 		return nil, fmt.Errorf("%s: the catalogue entry has no template name", p.Slug)
 	}
 
 	files := []render.File{
-		{Path: p.Template, Content: []byte(mappingStub(p))},
+		{Path: p.Template, Content: []byte(mappingStub(p, spnVersion))},
 		{Path: ".github/workflows/theme.yml", Content: []byte(workflow(p))},
 		{Path: ".gitattributes", Content: []byte(gitAttributes(p))},
 		{Path: "renovate.json", Content: []byte(renovateConfig)},
@@ -38,14 +38,14 @@ func Scaffold(p registry.Port) ([]render.File, error) {
 
 // mappingStub is the template a port starts from: the canonical header wired to
 // the catalogue, and one commented example of the rule that matters.
-func mappingStub(p registry.Port) string {
+func mappingStub(p registry.Port, spnVersion string) string {
 	filename := "themes/sp_night_{{ .Flavor }}"
 	if ext := configExtension(p.Install); ext != "" {
 		filename += ext
 	}
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "---\nspn:\n  version: %q\n  matrix: [flavor]\n  filename: %q\n---\n", ScaffoldVersion, filename)
+	fmt.Fprintf(&b, "---\nspn:\n  version: %q\n  matrix: [flavor]\n  filename: %q\n---\n", spnVersion, filename)
 	fmt.Fprintf(&b, "# SP Night — {{ .FlavorLabel }}\n")
 	fmt.Fprintf(&b, "# {{ .FlavorDesc }}\n")
 	fmt.Fprintf(&b, "#\n")
@@ -84,8 +84,9 @@ func configExtension(install string) string {
 func workflow(p registry.Port) string {
 	return fmt.Sprintf(`name: theme
 
-# The mapping in %s declares which spn version it is written against, so
-# nothing here needs updating when the tool moves. Renovate bumps the template.
+# The mapping in %s pins the exact spn version it was generated with, so this
+# file never needs editing when the engine moves. The engine's release fan-out
+# bumps that pin and regenerates the theme files in one pull request.
 
 on:
   workflow_dispatch:

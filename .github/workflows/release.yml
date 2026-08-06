@@ -62,3 +62,7 @@ jobs:
     needs: major-tag
     uses: ./.github/workflows/sync-ports.yml
     secrets: inherit
+    with:
+      # The tag being released, so each port's mapping pins the engine that
+      # produced the files in the same pull request.
+      version: ${{ github.ref_name }}

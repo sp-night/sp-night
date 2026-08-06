@@ -22,10 +22,21 @@ on:
         description: Regenerate a single port (its registry slug). Empty means all of them.
         required: false
         type: string
+      version:
+        description: >-
+          The engine version to pin each mapping to. release.yml passes the tag it
+          just published. Empty leaves every pin untouched, which is what a
+          regeneration that is not a release wants.
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       only:
         description: Regenerate a single port (its registry slug). Empty means all of them.
+        required: false
+        type: string
+      version:
+        description: Pin each mapping to this engine version. Empty leaves the pins alone.
         required: false
         type: string
 
@@ -98,6 +109,15 @@ jobs:
       - name: build the engine
         working-directory: engine
         run: go build -o "$RUNNER_TEMP/spn" ./cmd/spn
+
+      # The pin and the generated files are one fact: these files came out of
+      # that engine. Bumping the pin in the same pull request is what keeps a
+      # port's CI honest — it installs the pinned version and checks the files
+      # against it, so the two can never be measured apart.
+      - name: pin the engine this regeneration used
+        if: ${{ inputs.version != '' }}
+        working-directory: port
+        run: '"$RUNNER_TEMP/spn" pin ${{ inputs.version }}'
 
       - name: regenerate
         working-directory: port

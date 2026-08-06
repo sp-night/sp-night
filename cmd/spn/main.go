@@ -30,6 +30,7 @@ func commands() []command {
 		{"preview", "draw the synthetic preview for each flavour", runPreview},
 		{"new", "scaffold a new port repository", runNew},
 		{"lint", "check that templates ask for roles, not raw colours", runLint},
+		{"pin", "rewrite the engine version a mapping declares", runPin},
 		{"check", "audit contrast, accent separation and colour vision", runCheck},
 		{"palette", "print the palette and the resolved role layer", runPalette},
 		{"registry", "list and validate the port catalogue", runRegistry},

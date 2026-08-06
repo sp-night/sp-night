@@ -90,7 +90,7 @@ The frontmatter declares the contract:
 ```yaml
 ---
 spn:
-  version: "^1.0"                                    # tool range; Renovate bumps it
+  version: "1.2.0"                                   # the exact engine this was generated with
   matrix: [flavor]                                   # one file per flavour
   filename: "themes/sp_night_{{ .Flavor }}.conf"     # where it goes
 ---
@@ -98,6 +98,19 @@ spn:
 
 Leave `matrix` out for an app that reads one fixed config file — eza is the case:
 its mapping renders once, and each flavour still ships as a file in `themes/`.
+
+`version` is an **exact** version, not a range, and nobody edits it by hand.
+`spn new` writes the version of the binary that scaffolded the port, and from
+then on the engine's release fan-out bumps it in the same pull request that
+regenerates the theme files.
+
+That pairing is the point. The committed files and the version that produced them
+are one fact, so a port's CI installs the pinned engine and checks the files
+against it. A range — `^1.0` was the original — makes the CI resolve to whatever
+is newest, so a port's pull request goes from green to red because *the engine*
+released, with nothing in the port having changed. It also made the Renovate rule
+that was supposed to propagate engine bumps inert: every `1.x` satisfies `^1.0`,
+so there was never anything to bump.
 
 Then generate everything else:
 

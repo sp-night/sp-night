@@ -191,7 +191,7 @@ func runNew(args []string) error {
 		root = slug
 	}
 
-	scaffold, err := port.Scaffold(p)
+	scaffold, err := port.Scaffold(p, scaffoldVersion())
 	if err != nil {
 		return err
 	}
