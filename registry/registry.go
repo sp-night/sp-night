@@ -170,6 +170,13 @@ func (r *Registry) Validate() error {
 			{"slug", p.Slug}, {"name", p.Name}, {"group", p.Group},
 			{"blurb", p.Blurb}, {"homepage", p.Homepage}, {"repo", p.Repo},
 			{"install", p.Install}, {"template", p.Template},
+			// The website has always refused an entry without it — the port
+			// page's Install section is generated from it, so a missing one
+			// means a page telling nobody how to install the thing. Requiring
+			// it only there meant `spn registry` passed an entry that then
+			// failed the site's suite inside the fan-out, where a failure opens
+			// no pull request. The two gates now refuse the same catalogue.
+			{"install_guide", p.InstallGuide},
 		} {
 			if strings.TrimSpace(f.value) == "" {
 				return fmt.Errorf("%s: %s is required", where, f.name)

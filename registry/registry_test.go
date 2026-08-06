@@ -110,6 +110,7 @@ ports:
     repo: https://github.com/sp-night/kitty
     install: ~/.config/kitty/sp_night_{flavor}.conf
     template: kitty.conf.tmpl
+    install_guide: How to install it.
     mapping:
       - {key: "a", role: "ui.bg", meaning: "m"}
     preview:
@@ -136,6 +137,11 @@ ports:
 		},
 		"template not tmpl": func(s string) string {
 			return strings.Replace(s, "kitty.conf.tmpl", "kitty.conf", 1)
+		},
+		// The website refuses this one too. It used to refuse it alone, which
+		// meant the failure surfaced inside the fan-out, where nothing opens.
+		"no install guide": func(s string) string {
+			return strings.Replace(s, "    install_guide: How to install it.\n", "", 1)
 		},
 		"no mapping": func(s string) string {
 			return strings.Replace(s, "      - {key: \"a\", role: \"ui.bg\", meaning: \"m\"}\n", "", 1)
