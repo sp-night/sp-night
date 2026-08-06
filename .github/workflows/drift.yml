@@ -1,0 +1,175 @@
+name: drift
+
+# Ask, once a day: is the organisation actually in sync with the contract?
+#
+# Everything else here is push-based. A release fans out pull requests to the
+# ports and to the website, and then trusts that they get merged and that the
+# deploys land. Both assumptions have already been wrong: a palette change sat
+# published in the engine while the website served the previous contract for over
+# an hour, because the Pages deploy failed quietly and nothing was watching.
+#
+# This is the watcher. It writes nothing to a port and fixes nothing — it reads,
+# compares, and keeps exactly one issue up to date. A clean run closes it.
+
+on:
+  schedule:
+    # Early, and not on the hour: a queue nobody is competing for.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out the engine
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: build the engine
+        run: go build -o "$RUNNER_TEMP/spn" ./cmd/spn
+
+      # Every port, rendered against the engine as it stands on main. --check
+      # writes nothing; it fails when what is committed is not what the current
+      # contract produces. That is the definition of a port being behind.
+      - name: are the ports in sync
+        id: ports
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          slugs=$(go run ./cmd/spn registry --json --registry registry/ports.yml --copy registry/copy.yml \
+                   | python3 -c 'import json,sys; print(" ".join(json.load(sys.stdin)["slugs"]))')
+          echo "catalogue: $slugs"
+
+          behind=""
+          for slug in $slugs; do
+            dir="$RUNNER_TEMP/ports/$slug"
+            if ! git clone --depth 1 "https://github.com/sp-night/$slug" "$dir" 2>/dev/null; then
+              behind="${behind}- \`${slug}\` — the repository could not be cloned; it is in the catalogue, so it should exist\n"
+              continue
+            fi
+            # Chained with && so the status is the first failure rather than the
+            # last command's, and redirected as a group so every check's
+            # diagnostics land in $out — spn reports on stderr.
+            if ! out=$({ cd "$dir" \
+                 && "$RUNNER_TEMP/spn" gen --check --app "$slug" \
+                 && "$RUNNER_TEMP/spn" readme --check "$slug" \
+                 && "$RUNNER_TEMP/spn" preview --check "$slug"; } 2>&1); then
+              first=$(printf '%s' "$out" | grep -v '^$' | head -3)
+              behind="${behind}- \`${slug}\` — regenerating it would change what is committed\n\`\`\`\n${first}\n\`\`\`\n"
+            fi
+          done
+
+          {
+            echo "report<<REPORT_EOF"
+            printf '%b' "$behind"
+            echo "REPORT_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # The website is the public URL of the contract. If what it serves is not
+      # what this repository holds, the contract has two values in public.
+      - name: is the website serving this contract
+        id: site
+        run: |
+          set -uo pipefail
+          report=""
+          for pair in "palette:palette/sp_night.json" "roles:palette/roles.json"; do
+            file="${pair%%:*}"
+            local_file="${pair#*:}"
+
+            if ! curl -fsS --max-time 30 "https://sp-night.github.io/${file}.json" -o "$RUNNER_TEMP/${file}.json"; then
+              report="${report}- \`/${file}.json\` — the published contract could not be fetched\n"
+              continue
+            fi
+            # Compared as data, not as bytes: key order and whitespace are not
+            # the contract, the values are.
+            if ! python3 -c "import json,sys; sys.exit(0 if json.load(open('$local_file'))==json.load(open('$RUNNER_TEMP/${file}.json')) else 1)"; then
+              report="${report}- \`/${file}.json\` — what the site serves differs from \`${local_file}\`\n"
+            fi
+          done
+
+          {
+            echo "report<<REPORT_EOF"
+            printf '%b' "$report"
+            echo "REPORT_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # One issue, kept current. A new issue per run would be noise nobody reads;
+      # a stale open issue would be a lie. So: open or update while there is
+      # drift, close when there is none.
+      - name: report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PORTS: ${{ steps.ports.outputs.report }}
+          SITE: ${{ steps.site.outputs.report }}
+        run: |
+          set -euo pipefail
+          title="drift: something is not serving the current contract"
+
+          # The label is what makes "one issue, kept current" findable. Creating
+          # it is idempotent; a repository that already has it says so and that
+          # is not an error.
+          gh label create drift --repo "$GITHUB_REPOSITORY" --color d93f0b \
+            --description "Something published is behind the contract" 2>/dev/null || true
+
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --label drift \
+                      --json number -q '.[0].number // empty')
+
+          if [ -z "${PORTS}" ] && [ -z "${SITE}" ]; then
+            echo "everything is in sync"
+            if [ -n "$existing" ]; then
+              gh issue close "$existing" --repo "$GITHUB_REPOSITORY" \
+                --comment "Back in sync as of $GITHUB_SHA. Closed by the drift check."
+            fi
+            exit 0
+          fi
+
+          body=$(mktemp)
+          {
+            echo "The contract in this repository at \`$GITHUB_SHA\` is not what is published."
+            echo
+            if [ -n "${PORTS}" ]; then
+              echo "## Ports behind the contract"
+              echo
+              printf '%b' "${PORTS}"
+              echo
+              echo "A port goes out of sync when the palette moves and its regeneration pull"
+              echo "request has not been merged. The fix is to merge it — never to edit a"
+              echo "generated file."
+              echo
+            fi
+            if [ -n "${SITE}" ]; then
+              echo "## Website"
+              echo
+              printf '%b' "${SITE}"
+              echo
+              echo "The site vendors the contract and publishes it at \`/palette.json\` and"
+              echo "\`/roles.json\`. A difference here means either the sync pull request is"
+              echo "open, or a deploy failed."
+              echo
+            fi
+            echo "---"
+            echo
+            echo "Reported by [\`drift.yml\`](https://github.com/$GITHUB_REPOSITORY/blob/main/.github/workflows/drift.yml)."
+            echo "This issue is updated in place and closes itself once everything agrees."
+          } > "$body"
+
+          if [ -n "$existing" ]; then
+            gh issue edit "$existing" --repo "$GITHUB_REPOSITORY" --body-file "$body"
+            echo "updated issue #$existing"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" \
+              --label drift --body-file "$body"
+          fi
+
+          # Fail the run so the schedule shows red on the Actions tab. The issue
+          # is the artefact, but a green cron nobody opens tells nobody anything.
+          echo "::error::drift detected; see the issue"
+          exit 1
