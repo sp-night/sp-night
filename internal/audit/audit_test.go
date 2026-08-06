@@ -104,8 +104,9 @@ func TestSelectionIsHeldToLargeTextLevel(t *testing.T) {
 // The accent ladder keeps this list empty today, and the spec says so. If a
 // retune ever fills it, that is a real finding and this test is the messenger.
 func TestShippedAccentsAreSeparated(t *testing.T) {
-	for _, f := range mustLoad(t).Flavors {
-		if pairs := Separation(f); len(pairs) > 0 {
+	pal := mustLoad(t)
+	for _, f := range pal.Flavors {
+		if pairs := Separation(pal, f); len(pairs) > 0 {
 			for _, p := range pairs {
 				t.Errorf("flavor %q: %s and %s are neighbouring hues at ΔL %.3f (floor %.2f)",
 					f.ID, p.A, p.B, p.Lightness, MinLightness)
@@ -127,7 +128,7 @@ func TestSeparationCatchesNeighbouringHuesAtEqualLightness(t *testing.T) {
 	broken.Colors["estaiada"] = color.OklchToRGB(185, 0.07, 0.75).Hex()
 	broken.Colors["sereno"] = color.OklchToRGB(200, 0.07, 0.75).Hex()
 
-	pairs := Separation(broken)
+	pairs := Separation(pal, broken)
 	if len(pairs) == 0 {
 		t.Fatal("Separation missed two accents at identical lightness")
 	}
@@ -150,7 +151,7 @@ func TestSeparationCatchesNeighbouringHuesAtEqualLightness(t *testing.T) {
 func TestCVDIsReportedForAllThreeAndNeverFatal(t *testing.T) {
 	pal := mustLoad(t)
 	f := pal.Flavors[0]
-	summaries := CVD(f)
+	summaries := CVD(pal, f)
 	if len(summaries) != 3 {
 		t.Fatalf("got %d CVD summaries, want 3", len(summaries))
 	}
@@ -167,7 +168,7 @@ func TestCVDIsReportedForAllThreeAndNeverFatal(t *testing.T) {
 	// A palette with eight identical accents is maximally bad under CVD and
 	// still must not fail the build.
 	flat := theme.Flavor{ID: "flat", Label: "Flat", Appearance: "dark", Colors: maps.Clone(f.Colors)}
-	for _, k := range theme.AccentKeys() {
+	for _, k := range pal.AccentKeys() {
 		flat.Colors[k] = f.Colors["sodio"]
 	}
 	rep := Flavor(pal, flat)

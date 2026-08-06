@@ -121,7 +121,7 @@ func Flavor(pal *theme.Palette, f theme.Flavor) Report {
 		})
 	}
 
-	accents, brights := theme.AccentKeys(), theme.BrightKeys()
+	accents, brights := pal.AccentKeys(), pal.BrightKeys()
 
 	for _, bg := range Surfaces {
 		want := textLevel[bg]
@@ -154,8 +154,8 @@ func Flavor(pal *theme.Palette, f theme.Flavor) Report {
 	}
 
 	sort.SliceStable(rep.Checks, func(i, j int) bool { return rep.Checks[i].Ratio < rep.Checks[j].Ratio })
-	rep.Pairs = Separation(f)
-	rep.CVD = CVD(f)
+	rep.Pairs = Separation(pal, f)
+	rep.CVD = CVD(pal, f)
 	return rep
 }
 
@@ -182,8 +182,8 @@ const (
 )
 
 // Separation measures every accent against every other accent.
-func Separation(f theme.Flavor) []Pair {
-	accents := theme.AccentKeys()
+func Separation(pal *theme.Palette, f theme.Flavor) []Pair {
+	accents := pal.AccentKeys()
 	var out []Pair
 	for i := range accents {
 		for j := i + 1; j < len(accents); j++ {
@@ -207,8 +207,8 @@ func Separation(f theme.Flavor) []Pair {
 // clearing AA on a dark background is an overdetermined system — no popular
 // theme solves all three. The number exists so the choice is deliberate, not
 // so it blocks the build.
-func CVD(f theme.Flavor) []CVDSummary {
-	accents := theme.AccentKeys()
+func CVD(pal *theme.Palette, f theme.Flavor) []CVDSummary {
+	accents := pal.AccentKeys()
 	total := len(accents) * (len(accents) - 1) / 2
 
 	var out []CVDSummary

@@ -32,6 +32,59 @@ func TestEmbeddedContractLoads(t *testing.T) {
 	}
 }
 
+// The guard that matters most about the partition, and the one that was
+// missing: a colour every flavour declares but no band lists. Nothing that
+// walks the groups — the website's published palette, `spn palette`, the
+// previews — would ever show it, and before this check nothing failed either.
+// It has to be an error, not an omission.
+func TestAColourOutsideEveryGroupIsRejected(t *testing.T) {
+	p, _ := mustLoad(t)
+
+	orphan := *p
+	orphan.Order = append(slices.Clone(p.Order), "poste")
+	orphan.Flavors = nil
+	for _, f := range p.Flavors {
+		colors := map[string]string{"poste": "#ff8000"}
+		for k, v := range f.Colors {
+			colors[k] = v
+		}
+		orphan.Flavors = append(orphan.Flavors, Flavor{
+			ID: f.ID, Label: f.Label, Appearance: f.Appearance,
+			Description: f.Description, Colors: colors,
+		})
+	}
+
+	err := orphan.Validate()
+	if err == nil {
+		t.Fatal("Validate accepted a colour that belongs to no group")
+	}
+	if !strings.Contains(err.Error(), "poste") {
+		t.Errorf("the error should name the ungrouped colour; got %v", err)
+	}
+}
+
+// And the mirror: a band naming a colour no flavour declares. That is the
+// shape of a rename applied to the groups and forgotten in the flavours.
+func TestAGroupNamingAnUnknownColourIsRejected(t *testing.T) {
+	p, _ := mustLoad(t)
+
+	stale := *p
+	stale.Groups = slices.Clone(p.Groups)
+	for i, g := range stale.Groups {
+		if g.ID == GroupAccents {
+			stale.Groups[i].Keys = append(slices.Clone(g.Keys), "sodio_antigo")
+		}
+	}
+
+	err := stale.Validate()
+	if err == nil {
+		t.Fatal("Validate accepted a group naming a colour no flavour declares")
+	}
+	if !strings.Contains(err.Error(), "sodio_antigo") {
+		t.Errorf("the error should name the stale key; got %v", err)
+	}
+}
+
 func TestFlavorsAreDeclarationOrdered(t *testing.T) {
 	p, _ := mustLoad(t)
 	want := []string{"noite", "garoa", "jaragua"}
@@ -87,7 +140,7 @@ func TestEveryFlavorDeclaresTheSame23Colours(t *testing.T) {
 func TestOrderMatchesGroupOrder(t *testing.T) {
 	p, _ := mustLoad(t)
 	var want []string
-	for _, g := range Groups {
+	for _, g := range p.Groups {
 		want = append(want, g.Keys...)
 	}
 	if !slices.Equal(p.Order, want) {
@@ -154,9 +207,9 @@ func TestFgVivoLiftsFgByTheSameAmountAsAnAccent(t *testing.T) {
 // lightness — not a different hue.
 func TestBrightsLiftTheirAccent(t *testing.T) {
 	p, _ := mustLoad(t)
-	accents := AccentKeys()
+	accents := p.AccentKeys()
 	for _, f := range p.Flavors {
-		for _, bright := range BrightKeys() {
+		for _, bright := range p.BrightKeys() {
 			base, ok := strings.CutSuffix(bright, "_vivo")
 			if !ok {
 				t.Errorf("%q is in Bright ANSI but is not named <accent>_vivo", bright)

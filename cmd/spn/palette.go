@@ -61,8 +61,8 @@ func printColors(pal *theme.Palette) {
 	}
 	fmt.Println()
 
-	for _, g := range theme.Groups {
-		fmt.Printf("\n  %s\n", g.Title)
+	for _, g := range pal.Groups {
+		fmt.Printf("\n  %s\n", g.Label)
 		for _, k := range g.Keys {
 			fmt.Printf("  %-15s", k)
 			for _, f := range pal.Flavors {
