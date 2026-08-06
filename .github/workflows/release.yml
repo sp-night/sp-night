@@ -7,6 +7,20 @@ name: release
 on:
   push:
     tags: ["v*"]
+  # A tag push is an event, and an event can be missed — GitHub throttles webhook
+  # triggers while recovering from an incident, and a throttled event is dropped
+  # rather than queued. That happened to v1.3.0: the tag is on the remote and no
+  # run was ever created, so the release could only be recovered by deleting the
+  # tag and pushing it again, which rewrites history to work around a lost
+  # notification.
+  #
+  # Run it against the tag instead, so `github.ref_name` is still the version:
+  #
+  #   gh workflow run release.yml --ref v1.3.0
+  #
+  # Every job below reads the ref rather than the event, so the dispatched run
+  # and the pushed one do the same thing.
+  workflow_dispatch:
 
 permissions:
   contents: write
