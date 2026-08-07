@@ -84,7 +84,18 @@ jobs:
 
   regenerate:
     needs: plan
-    if: github.event_name != 'push'
+    # Skip the fan-out only on the catalogue path — a push to `registry/**` on a
+    # branch. Editing the catalogue does not change what any mapping resolves to,
+    # so regenerating every port would open a pull request per repository to say
+    # nothing.
+    #
+    # The ref type is what separates the two, and it has to: a release arrives
+    # here as a push as well, of a tag. `github.event_name != 'push'` alone
+    # skipped both, so a release published binaries, moved the major tag, synced
+    # the website — and silently regenerated nothing. That is the one path where
+    # the fan-out is the entire point, since it is what bumps each mapping's pin
+    # to the version just released.
+    if: ${{ github.event_name != 'push' || github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
