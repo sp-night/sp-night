@@ -61,8 +61,8 @@ jobs:
     outputs:
       ports: ${{ steps.list.outputs.ports }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.26"
       - id: list
@@ -114,18 +114,18 @@ jobs:
           fi
 
       - name: check out the engine
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: engine
 
       - name: check out the port
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: sp-night/${{ matrix.port }}
           path: port
           token: ${{ secrets.PORTS_TOKEN }}
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.26"
 
@@ -154,7 +154,7 @@ jobs:
           "$RUNNER_TEMP/spn" preview ${{ matrix.port }}
 
       - name: open a pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           path: port
           token: ${{ secrets.PORTS_TOKEN }}
@@ -204,18 +204,18 @@ jobs:
           fi
 
       - name: check out the engine
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           path: engine
 
       - name: check out the website
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: sp-night/sp-night.github.io
           path: site
           token: ${{ secrets.PORTS_TOKEN }}
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version: "1.26"
 
@@ -283,7 +283,7 @@ jobs:
       # for every port in the catalogue. A catalogue that has outrun the palette
       # must not reach the site even as a pull request. `build` is included
       # because the port pages are only rendered there.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "24"
           cache: npm
@@ -309,7 +309,7 @@ jobs:
         run: npm run check && npm test && npm run build
 
       - name: open a pull request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           path: site
           token: ${{ secrets.PORTS_TOKEN }}
