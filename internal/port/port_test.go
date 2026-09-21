@@ -2,6 +2,7 @@ package port
 
 import (
 	"encoding/xml"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -385,5 +386,239 @@ func TestEntryPreviewRenders(t *testing.T) {
 		if err := xml.Unmarshal(svg, new(struct{ XMLName xml.Name })); err != nil {
 			t.Errorf("%s: preview is not well-formed XML: %v", f.ID, err)
 		}
+	}
+}
+
+// ------------------------------------------------------------------ frames
+
+// The terminal frame is the one every shipped terminal port is checked against
+// byte for byte, so the refactor that added the other frames must not have
+// moved a single character of it. The golden is kitty/noite as published.
+func TestTerminalFrameIsUnchanged(t *testing.T) {
+	pal, roles, reg, _ := fixtures(t)
+	p, _ := reg.Port("kitty")
+	want, err := os.ReadFile(filepath.Join("testdata", "kitty-noite.svg"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := SVG(p, pal, roles, pal.Flavors[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(want) {
+		t.Error("the terminal frame no longer renders kitty/noite as published; " +
+			"a byte moved, and four port repositories would fail `spn preview --check`")
+	}
+}
+
+func TestFrameDefaultsToTerminal(t *testing.T) {
+	pal, roles, reg, _ := fixtures(t)
+	blank, _ := reg.Port("ghostty")
+	named := blank
+	named.Preview.Frame = registry.FrameTerminal
+	a, err := SVG(blank, pal, roles, pal.Flavors[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := SVG(named, pal, roles, pal.Flavors[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(a) != string(b) {
+		t.Error("an empty frame and an explicit terminal frame render differently")
+	}
+}
+
+func TestUnknownFrameIsRejected(t *testing.T) {
+	pal, roles, reg, _ := fixtures(t)
+	p, _ := reg.Port("ghostty")
+	p.Preview.Frame = "window"
+	if _, err := SVG(p, pal, roles, pal.Flavors[0]); err == nil {
+		t.Error("an unknown frame rendered instead of failing")
+	}
+}
+
+// Every frame renders in every flavour with the same body, so a frame stays
+// covered even when no catalogue entry happens to use it, and the colour rule
+// holds for the chrome each one adds.
+func TestEveryFrameRendersInEveryFlavour(t *testing.T) {
+	pal, roles, reg, _ := fixtures(t)
+	base, _ := reg.Port("ghostty")
+	bar := &registry.Bar{
+		Left:  []registry.Span{{Text: " NOR ", Role: "ui.accent", Bold: true}},
+		Right: []registry.Span{{Text: "sp_night_{flavor}", Role: "ui.fg_dim"}},
+	}
+	for _, frame := range registry.Frames {
+		p := base
+		p.Preview.Frame = frame
+		switch frame {
+		case registry.FrameEditor:
+			p.Preview.Bar, p.Preview.CursorLine = bar, 2
+		case registry.FrameApp:
+			p.Preview.Bar = bar
+		}
+		for _, fl := range pal.Flavors {
+			svg, err := SVG(p, pal, roles, fl)
+			if err != nil {
+				t.Fatalf("%s/%s: %v", frame, fl.ID, err)
+			}
+			if err := xml.Unmarshal(svg, new(any)); err != nil {
+				t.Errorf("%s/%s is not well-formed XML: %v", frame, fl.ID, err)
+			}
+			allowed := map[string]bool{}
+			for _, hex := range fl.Colors {
+				allowed[hex] = true
+			}
+			for _, found := range hexPattern(string(svg)) {
+				if !allowed[found] {
+					t.Errorf("%s/%s uses %s, which is not in the palette", frame, fl.ID, found)
+				}
+			}
+			if strings.Contains(string(svg), "{flavor}") {
+				t.Errorf("%s/%s left {flavor} in the bar", frame, fl.ID)
+			}
+		}
+	}
+}
+
+// helix: a tab, a gutter the renderer numbers, the cursor line lifted, and a
+// statusline — none of it hand-drawn in the body any more.
+func TestEditorFrame(t *testing.T) {
+	pal, roles, reg, _ := fixtures(t)
+	p, _ := reg.Port("helix")
+	if p.Preview.Kind() != registry.FrameEditor {
+		t.Fatalf("helix is drawn as %s", p.Preview.Kind())
+	}
+	fl := pal.Flavors[0]
+	resolved, _ := roles.Resolve(fl)
+	svg, err := SVG(p, pal, roles, fl)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(svg)
+
+	for i := 1; i <= len(p.Preview.Body); i++ {
+		fill := resolved["ui"]["fg_muted"]
+		if i == p.Preview.CursorLine {
+			fill = resolved["ui"]["fg"]
+		}
+		want := fmt.Sprintf(`<text x="%d" y="%d" text-anchor="end" class="mono" fill="%s">%d</text>`,
+			gutterNumX, innerBodyTop+(i-1)*lineHeight, fill, i)
+		if !strings.Contains(s, want) {
+			t.Errorf("gutter line %d missing or miscoloured:\n%s", i, want)
+		}
+	}
+	for _, stale := range []string{"│", "<circle", `y="26"`} {
+		if strings.Contains(s, stale) {
+			t.Errorf("editor frame still carries %q", stale)
+		}
+	}
+	cursor := fmt.Sprintf(`<rect x="1" y="%d" width="%d" height="%d" fill="%s"/>`,
+		innerBodyTop+(p.Preview.CursorLine-1)*lineHeight-cursorLineRise, width-2, lineHeight, resolved["ui"]["line"])
+	if strings.Count(s, cursor) != 1 {
+		t.Errorf("expected exactly one cursor-line rect:\n%s", cursor)
+	}
+	tab := fmt.Sprintf(`<text x="%d" y="%d" class="mono" fill="%s">sp_night.rs</text>`, tabPad, stripTextY, resolved["ui"]["fg"])
+	if !strings.Contains(s, tab) {
+		t.Error("the title is not drawn as the open tab")
+	}
+	assertBar(t, s, resolved, p.Preview.Bar)
+
+	p.Preview.CursorLine = 0
+	svg, _ = SVG(p, pal, roles, fl)
+	if strings.Contains(string(svg), `<rect x="1" `) {
+		t.Error("cursor_line 0 still highlights a line")
+	}
+}
+
+// herdr: the name as a header, no dots, a key bar.
+func TestAppFrame(t *testing.T) {
+	pal, roles, reg, _ := fixtures(t)
+	p, _ := reg.Port("herdr")
+	if p.Preview.Kind() != registry.FrameApp {
+		t.Fatalf("herdr is drawn as %s", p.Preview.Kind())
+	}
+	fl := pal.Flavors[0]
+	resolved, _ := roles.Resolve(fl)
+	svg, err := SVG(p, pal, roles, fl)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(svg)
+	header := fmt.Sprintf(`<text x="%d" y="%d" class="mono" fill="%s" font-weight="bold">herdr</text>`, stripPad, stripTextY, resolved["ui"]["accent"])
+	if !strings.Contains(s, header) {
+		t.Error("the title is not drawn as the header")
+	}
+	if strings.Contains(s, "<circle") {
+		t.Error("an app has no window dots")
+	}
+	assertBar(t, s, resolved, p.Preview.Bar)
+}
+
+// eza: nothing above the session; the title survives only as the aria-label.
+func TestPaneFrame(t *testing.T) {
+	pal, roles, reg, _ := fixtures(t)
+	p, _ := reg.Port("eza")
+	if p.Preview.Kind() != registry.FramePane {
+		t.Fatalf("eza is drawn as %s", p.Preview.Kind())
+	}
+	svg, err := SVG(p, pal, roles, pal.Flavors[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(svg)
+	for _, chrome := range []string{"<circle", "<path", `y="23"`, `y="26"`, `y="342"`} {
+		if strings.Contains(s, chrome) {
+			t.Errorf("pane frame draws chrome: %q", chrome)
+		}
+	}
+	if !strings.Contains(s, fmt.Sprintf(`<text x="%d" y="%d" xml:space="preserve"`, bodyLeft, paneBodyTop)) {
+		t.Error("the session does not start at the top of the pane")
+	}
+	if !strings.Contains(s, `aria-label="eza themed with SP Night`) {
+		t.Error("the pane lost its aria-label")
+	}
+}
+
+// Pure geometry: the budget each frame grants the body has to end above the
+// bar or the colour strip, so a constant cannot be changed into an overlap.
+func TestBodyFitsTheFrame(t *testing.T) {
+	const descent = 4 // below the baseline of a 15px line
+	for _, tc := range []struct {
+		frame  string
+		top    int
+		bottom int
+	}{
+		{registry.FrameTerminal, bodyTop, swatchLabelY - 12},
+		{registry.FrameEditor, innerBodyTop, barY},
+		{registry.FrameApp, innerBodyTop, barY},
+		{registry.FramePane, paneBodyTop, swatchLabelY - 12},
+	} {
+		last := tc.top + (registry.MaxBodyLines(tc.frame)-1)*lineHeight + descent
+		if last > tc.bottom {
+			t.Errorf("%s: %d lines end at %d, past %d", tc.frame, registry.MaxBodyLines(tc.frame), last, tc.bottom)
+		}
+	}
+}
+
+func assertBar(t *testing.T, svg string, resolved map[string]map[string]string, bar *registry.Bar) {
+	t.Helper()
+	panel := fmt.Sprintf(`<rect x="0" y="%d" width="%d" height="%d" fill="%s"/>`, barY, width, lineHeight, resolved["ui"]["panel"])
+	if !strings.Contains(svg, panel) {
+		t.Error("no bar panel")
+	}
+	if bar == nil {
+		return
+	}
+	left := fmt.Sprintf(`<text x="%d" y="%d" xml:space="preserve" class="mono"><tspan`, stripPad, barTextY)
+	if len(bar.Left) > 0 && !strings.Contains(svg, left) {
+		t.Error("the bar's left side is not drawn at the left edge")
+	}
+	right := fmt.Sprintf(`<text x="%d" y="%d" text-anchor="end" xml:space="preserve" class="mono"><tspan`, width-stripPad, barTextY)
+	if len(bar.Right) > 0 && !strings.Contains(svg, right) {
+		t.Error("the bar's right side is not anchored at the right edge")
+	}
+	if !strings.Contains(svg, escText(bar.Right[len(bar.Right)-1].Text)) {
+		t.Error("the bar's last right span is missing")
 	}
 }

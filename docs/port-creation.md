@@ -54,6 +54,7 @@ The fields it leaves you:
         meaning: "*laje* under the main text"
     preview:
       title: kitty — sp_night_{flavor}
+      frame: terminal             # terminal | editor | app | pane
       swatches: {label: palette 0–15, roles: [ansi.black, ...]}
       body:
         - - {t: "~/sp-night ", r: ui.accent}
@@ -69,6 +70,22 @@ spn registry --registry registry/ports.yml --copy registry/copy.yml
 
 `mapping` is not decoration — it is the table a reader checks before trusting a
 port, and validation refuses an entry without one.
+
+`frame` is the chrome the preview is drawn in, and it should be the kind of
+window the app actually lives in. The body is only the session; the frame draws
+the rest, so a port never has to fake a gutter or a statusline span by span.
+
+| frame | for | what the renderer adds | takes |
+|---|---|---|---|
+| `terminal` (default) | a terminal emulator | titlebar with three dots and the centred `title` | — |
+| `editor` | an editor | a bufferline with `title` as the open tab, numbered lines, a statusline | `bar`, `cursor_line` |
+| `app` | a full-screen TUI | `title` as the header, a bottom bar | `bar` |
+| `pane` | a CLI that runs in someone else's terminal | nothing but the border | — |
+
+`bar` is `{left: [spans], right: [spans]}` in the same span shape as the body;
+`cursor_line` is the 1-based body line the editor highlights. Each frame fits a
+fixed number of body lines above the colour strip (13 for a pane, 11 for the
+rest), and `spn registry` refuses a session that runs past it.
 
 ## 2 — Create the repository
 

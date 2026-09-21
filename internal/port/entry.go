@@ -63,6 +63,11 @@ func Entry(slug string) string {
 
 	fmt.Fprintf(&b, "    preview:\n")
 	fmt.Fprintf(&b, "      title: %s — sp_night_{flavor}\n", slug)
+	fmt.Fprintf(&b, "      frame: terminal              # terminal | editor | app | pane\n")
+	fmt.Fprintf(&b, "      # An editor draws a tab from the title, numbers the body and takes a\n")
+	fmt.Fprintf(&b, "      # `bar` (statusline) and a `cursor_line`; an app draws the title as its\n")
+	fmt.Fprintf(&b, "      # header and takes a `bar`; a pane is a CLI in someone else's terminal\n")
+	fmt.Fprintf(&b, "      # and draws no chrome at all.\n")
 	fmt.Fprintf(&b, "      swatches:\n")
 	fmt.Fprintf(&b, "        label: palette 0–15          # TODO name the strip below\n")
 	fmt.Fprintf(&b, "        roles:\n")

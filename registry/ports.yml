@@ -23,11 +23,18 @@
 #   template       the mapping file in the port repository
 #   install_guide  the app-specific prose of the README's Install section
 #   mapping        the "What gets themed" table: app key | role | gloss
-#   preview        the synthetic screenshot: title, fake session, colour strip
+#   preview        the synthetic screenshot: title, frame, fake session, colour strip
 #
 # In `install`, `activate` and preview text, {flavor} and {label} are
 # substituted. In a preview span, `r` is a role (group.role), `c` is a raw
 # palette key — a strip that exists to show colours may name colours.
+#
+# `preview.frame` is the chrome the session is drawn in, and it should be the
+# kind of window the app lives in: `terminal` (the default: titlebar, dots),
+# `editor` (a tab from the title, numbered lines, a `bar` statusline and a
+# `cursor_line`), `app` (the title as a header, a `bar` of key hints) or `pane`
+# (a CLI in someone else's terminal: no chrome at all). The body is only the
+# session; the frame draws the rest, so nobody fakes a gutter span by span.
 
 groups:
   terminal: Terminals
@@ -426,14 +433,6 @@ ports:
           - {t: " = ", r: syntax.operator}
           - {t: "\"{r:ui.fg_dim}\"", r: syntax.string}
         - []
-        - - {t: "[colors.cursor]", r: syntax.type}
-        - - {t: "cursor", r: syntax.attribute}
-          - {t: " = ", r: syntax.operator}
-          - {t: "\"{r:ui.cursor}\"", r: syntax.string}
-        - - {t: "text", r: syntax.attribute}
-          - {t: "   = ", r: syntax.operator}
-          - {t: "\"{r:ui.on_accent}\"", r: syntax.string}
-        - []
         - - {t: "~/sp-night ", r: ui.accent}
           - {t: "❯ ", r: ui.accent_alt}
           - {t: "grep -n import ~/.config/alacritty/alacritty.toml", r: ui.fg}
@@ -449,9 +448,6 @@ ports:
         - - {t: "✓ ", r: diagnostic.ok}
           - {t: "contrast   ", r: ui.fg}
           - {t: "70 pairs per flavour, AA on every surface", r: ui.fg_dim}
-        - - {t: "✓ ", r: diagnostic.ok}
-          - {t: "accents    ", r: ui.fg}
-          - {t: "separation ΔE ≥ 0.10 or ΔL ≥ 0.04", r: ui.fg_dim}
 
   - slug: eza
     name: eza
@@ -530,6 +526,7 @@ ports:
 
     preview:
       title: eza — sp_night_{flavor}
+      frame: pane
       swatches:
         label: the roles behind theme.yml
         keys: [vao, brasa, sodio, taxi, ibira, estaiada, sereno, marginal, temporal, fg_dim, fg]
@@ -721,7 +718,16 @@ ports:
         meaning: Markdown headings in *sódio*, links in *marginal* — the expressway sign
 
     preview:
-      title: helix — sp_night_{flavor}
+      title: sp_night.rs
+      frame: editor
+      cursor_line: 6
+      bar:
+        left:
+          - {t: " NOR ", r: ui.accent, b: true}
+          - {t: "  sp_night.rs", r: ui.fg}
+        right:
+          - {t: "6:2  ", r: ui.fg_dim}
+          - {t: "rust", r: ui.fg_muted}
       swatches:
         label: the roles behind the scopes
         roles:
@@ -742,23 +748,16 @@ ports:
           - diagnostic.warn
           - git.added
       body:
-        - - {t: "  1 ", r: ui.fg_muted}
-          - {t: "│ ", r: ui.border}
-          - {t: "use ", r: syntax.keyword}
+        - - {t: "use ", r: syntax.keyword}
           - {t: "std", r: syntax.namespace}
           - {t: "::", r: syntax.punctuation}
           - {t: "collections", r: syntax.namespace}
           - {t: "::", r: syntax.punctuation}
           - {t: "HashMap", r: syntax.type}
           - {t: ";", r: syntax.punctuation}
-        - - {t: "  2 ", r: ui.fg_muted}
-          - {t: "│", r: ui.border}
-        - - {t: "  3 ", r: ui.fg_muted}
-          - {t: "│ ", r: ui.border}
-          - {t: "/// the sodium lamp that turns the whole city this colour", r: syntax.comment}
-        - - {t: "  4 ", r: ui.fg_muted}
-          - {t: "│ ", r: ui.border}
-          - {t: "pub fn ", r: syntax.keyword}
+        - []
+        - - {t: "/// the sodium lamp that turns the whole city this colour", r: syntax.comment}
+        - - {t: "pub fn ", r: syntax.keyword}
           - {t: "flavours", r: syntax.function}
           - {t: "() ", r: syntax.punctuation}
           - {t: "-> ", r: syntax.operator}
@@ -767,8 +766,7 @@ ports:
           - {t: "'static ", r: syntax.keyword}
           - {t: "str", r: syntax.type}
           - {t: "> {", r: syntax.punctuation}
-        - - {t: "  5 ", r: ui.fg_muted}
-          - {t: "│     ", r: ui.border}
+        - - {t: "    ", r: ui.fg}
           - {t: "vec!", r: syntax.macro}
           - {t: "[", r: syntax.punctuation}
           - {t: "\"noite\"", r: syntax.string}
@@ -777,18 +775,10 @@ ports:
           - {t: ", ", r: syntax.punctuation}
           - {t: "\"jaragua\"", r: syntax.string}
           - {t: "]", r: syntax.punctuation}
-        - - {t: "  6 ", r: ui.fg_muted}
-          - {t: "│ ", r: ui.border}
-          - {t: "}", r: syntax.punctuation}
-        - []
-        - - {t: "    ", r: ui.fg_muted}
+        - - {t: "}", r: syntax.punctuation}
+          - {t: "      ", r: ui.fg}
           - {t: "● ", r: diagnostic.error}
           - {t: "expected `;`, found `}`", r: ui.fg_dim}
-        - []
-        - - {t: " NOR ", r: ui.accent, b: true}
-          - {t: "  sp_night.rs ", r: ui.fg}
-          - {t: "  6:2 ", r: ui.fg_dim}
-          - {t: "  rust", r: ui.fg_muted}
 
   - slug: herdr
     name: herdr
@@ -877,7 +867,18 @@ ports:
           accepts an override, but nothing in the interface paints with it today
 
     preview:
-      title: herdr — sp_night_{flavor}
+      title: herdr
+      frame: app
+      bar:
+        left:
+          - {t: " ~/sp-night ", r: ui.fg}
+          - {t: " main", r: syntax.type}
+        right:
+          - {t: "4 agents  ", r: ui.fg_muted}
+          - {t: "j/k", r: ui.accent}
+          - {t: " move  ", r: ui.fg_dim}
+          - {t: "q", r: ui.accent}
+          - {t: " quit", r: ui.fg_dim}
       swatches:
         label: the roles behind the tokens
         roles:
@@ -898,11 +899,6 @@ ports:
           - syntax.type
           - ui.accent_alt
       body:
-        - - {t: " herdr ", r: ui.accent, b: true}
-          - {t: " ~/sp-night ", r: ui.fg}
-          - {t: "  main", r: syntax.type}
-          - {t: "                          4 agents", r: ui.fg_muted}
-        - - {t: " ─────────────────────────────────────────────────────", r: ui.border}
         - - {t: " ● ", r: diagnostic.warn}
           - {t: "claude    ", r: ui.fg}
           - {t: "working   ", r: diagnostic.warn}

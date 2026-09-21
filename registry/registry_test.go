@@ -167,6 +167,34 @@ ports:
 		"no groups": func(s string) string {
 			return strings.Replace(s, "groups:\n  terminal: Terminals\n", "groups:\n", 1)
 		},
+		"unknown frame": func(s string) string {
+			return strings.Replace(s, "      title: t\n", "      title: t\n      frame: window\n", 1)
+		},
+		"bar on a terminal": func(s string) string {
+			return strings.Replace(s, "      title: t\n", "      title: t\n      bar: {left: [{t: x, r: ui.fg}]}\n", 1)
+		},
+		"bar on a pane": func(s string) string {
+			return strings.Replace(s, "      title: t\n", "      title: t\n      frame: pane\n      bar: {left: [{t: x, r: ui.fg}]}\n", 1)
+		},
+		"bar with neither side": func(s string) string {
+			return strings.Replace(s, "      title: t\n", "      title: t\n      frame: editor\n      bar: {}\n", 1)
+		},
+		"bar span with neither r nor c": func(s string) string {
+			return strings.Replace(s, "      title: t\n", "      title: t\n      frame: app\n      bar: {right: [{t: x}]}\n", 1)
+		},
+		"cursor line outside the editor": func(s string) string {
+			return strings.Replace(s, "      title: t\n", "      title: t\n      frame: app\n      cursor_line: 1\n", 1)
+		},
+		"cursor line past the body": func(s string) string {
+			return strings.Replace(s, "      title: t\n", "      title: t\n      frame: editor\n      cursor_line: 2\n", 1)
+		},
+		"body past the terminal's budget": func(s string) string {
+			return strings.Replace(s, "        - - {t: \"x\", r: ui.fg}\n", strings.Repeat("        - - {t: \"x\", r: ui.fg}\n", MaxBodyLines(FrameTerminal)+1), 1)
+		},
+		"body past the pane's budget": func(s string) string {
+			s = strings.Replace(s, "      title: t\n", "      title: t\n      frame: pane\n", 1)
+			return strings.Replace(s, "        - - {t: \"x\", r: ui.fg}\n", strings.Repeat("        - - {t: \"x\", r: ui.fg}\n", MaxBodyLines(FramePane)+1), 1)
+		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			if _, err := Load([]byte(mutate(base))); err == nil {
@@ -241,5 +269,53 @@ func TestLoadCopyRejectsMissingFields(t *testing.T) {
 	}
 	if _, err := LoadCopy([]byte("[")); err == nil {
 		t.Error("accepted malformed YAML")
+	}
+}
+
+// The frame is optional and the optional parts are frame-specific: an editor
+// with a bar and a cursor line, an app with a bar, a pane with a full body, all
+// validate; and the empty frame reads as terminal.
+func TestValidateAcceptsEachFrame(t *testing.T) {
+	base := `
+groups:
+  terminal: Terminals
+ports:
+  - slug: kitty
+    name: kitty
+    group: terminal
+    blurb: A blurb.
+    homepage: https://sw.kovidgoyal.net/kitty/
+    repo: https://github.com/sp-night/kitty
+    install: ~/.config/kitty/sp_night_{flavor}.conf
+    template: kitty.conf.tmpl
+    install_guide: How to install it.
+    mapping:
+      - {key: "a", role: "ui.bg", meaning: "m"}
+    preview:
+      title: t
+      swatches: {label: l, keys: [laje]}
+      body:
+        - - {t: "x", r: ui.fg}
+`
+	for name, extra := range map[string]string{
+		"terminal":      "      frame: terminal\n",
+		"editor":        "      frame: editor\n      cursor_line: 1\n      bar: {left: [{t: x, r: ui.fg}], right: [{t: y, c: laje}]}\n",
+		"editor, plain": "      frame: editor\n",
+		"app":           "      frame: app\n      bar: {right: [{t: q, r: ui.accent}]}\n",
+		"pane":          "      frame: pane\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := Load([]byte(strings.Replace(base, "      title: t\n", "      title: t\n"+extra, 1))); err != nil {
+				t.Errorf("rejected a valid %s entry: %v", name, err)
+			}
+		})
+	}
+
+	r, err := Load([]byte(base))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := r.Ports[0].Preview.Kind(); got != FrameTerminal {
+		t.Errorf("an empty frame reads as %q, want %q", got, FrameTerminal)
 	}
 }

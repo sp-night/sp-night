@@ -79,16 +79,71 @@ type MappingRow struct {
 	Meaning string `yaml:"meaning"`
 }
 
-// Preview is the synthetic terminal mockup for one port.
+// Preview is the synthetic screenshot for one port.
 type Preview struct {
-	// Title is the window title. {flavor} and {label} are substituted.
+	// Title names what the picture shows. {flavor} and {label} are substituted.
+	// Where it lands depends on the frame: the window title of a terminal, the
+	// active tab of an editor, the header of an app. A pane does not draw it,
+	// but it still names the picture for the aria-label and the README's alt.
 	Title string `yaml:"title"`
 
+	// Frame is the chrome around the session, one of the Frame* constants.
+	// Empty means terminal. A port is drawn in the kind of window it actually
+	// lives in: an editor gets a bufferline, a gutter and a statusline; a
+	// full-screen app a header and a bottom bar; a CLI nothing but the border,
+	// because the chrome around it belongs to whichever terminal it runs in.
+	Frame string `yaml:"frame"`
+
 	// Body is the fake session: a list of lines, each a list of coloured runs.
-	// An empty line is a vertical gap rather than a blank row.
+	// An empty line is a vertical gap rather than a blank row — except in the
+	// editor frame, where the gutter numbers it like any other line.
 	Body [][]Span `yaml:"body"`
 
+	// Bar is the bottom bar: an editor's statusline, an app's key hints. Only
+	// the editor and app frames draw one; the other two reject it.
+	Bar *Bar `yaml:"bar"`
+
+	// CursorLine is the 1-based body line the editor frame highlights, and
+	// whose gutter number it brightens. Zero draws no highlight. Editor only.
+	CursorLine int `yaml:"cursor_line"`
+
 	Swatches Swatches `yaml:"swatches"`
+}
+
+// The frames a preview can be drawn in.
+const (
+	FrameTerminal = "terminal"
+	FrameEditor   = "editor"
+	FrameApp      = "app"
+	FramePane     = "pane"
+)
+
+// Frames lists every frame, in the order the docs name them.
+var Frames = []string{FrameTerminal, FrameEditor, FrameApp, FramePane}
+
+// Kind is the frame with the default applied.
+func (p Preview) Kind() string {
+	if p.Frame == "" {
+		return FrameTerminal
+	}
+	return p.Frame
+}
+
+// MaxBodyLines is how many body lines fit a frame above its bar or its swatch
+// strip. The canvas is fixed, so a session that runs past this would print
+// over the colour strip — which the alacritty preview once did.
+func MaxBodyLines(frame string) int {
+	if frame == FramePane {
+		return 13
+	}
+	return 11
+}
+
+// Bar is a strip of text along the bottom of the editor and app frames: runs
+// anchored at the left edge, and runs anchored at the right.
+type Bar struct {
+	Left  []Span `yaml:"left"`
+	Right []Span `yaml:"right"`
 }
 
 // Span is one coloured run of text.
@@ -221,17 +276,37 @@ func (p Preview) validate(where string) error {
 	if strings.TrimSpace(p.Title) == "" {
 		return fmt.Errorf("%s: preview.title is required", where)
 	}
+	kind := p.Kind()
+	if !slices.Contains(Frames, kind) {
+		return fmt.Errorf("%s: preview.frame %q is not one of %s", where, p.Frame, strings.Join(Frames, ", "))
+	}
 	if len(p.Body) == 0 {
 		return fmt.Errorf("%s: preview.body is required", where)
 	}
-	for i, line := range p.Body {
-		for j, s := range line {
-			if s.Role == "" && s.Key == "" {
-				return fmt.Errorf("%s: preview.body line %d span %d has neither a role (r) nor a palette key (c)", where, i, j)
-			}
-			if s.Role != "" && s.Key != "" {
-				return fmt.Errorf("%s: preview.body line %d span %d sets both r and c; pick one", where, i, j)
-			}
+	if n := MaxBodyLines(kind); len(p.Body) > n {
+		return fmt.Errorf("%s: preview.body has %d lines; the %s frame fits %d above the colour strip", where, len(p.Body), kind, n)
+	}
+	if err := validateSpans(where, "preview.body", p.Body); err != nil {
+		return err
+	}
+	hasBar := kind == FrameEditor || kind == FrameApp
+	if p.Bar != nil {
+		if !hasBar {
+			return fmt.Errorf("%s: preview.bar is only drawn by the editor and app frames, not %s", where, kind)
+		}
+		if len(p.Bar.Left) == 0 && len(p.Bar.Right) == 0 {
+			return fmt.Errorf("%s: preview.bar has neither left nor right; drop it or fill a side", where)
+		}
+		if err := validateSpans(where, "preview.bar", [][]Span{p.Bar.Left, p.Bar.Right}); err != nil {
+			return err
+		}
+	}
+	if p.CursorLine != 0 {
+		if kind != FrameEditor {
+			return fmt.Errorf("%s: preview.cursor_line is only drawn by the editor frame, not %s", where, kind)
+		}
+		if p.CursorLine < 1 || p.CursorLine > len(p.Body) {
+			return fmt.Errorf("%s: preview.cursor_line %d is outside the body's %d lines", where, p.CursorLine, len(p.Body))
 		}
 	}
 	if len(p.Swatches.Roles) == 0 && len(p.Swatches.Keys) == 0 {
@@ -242,6 +317,22 @@ func (p Preview) validate(where string) error {
 	}
 	if strings.TrimSpace(p.Swatches.Label) == "" {
 		return fmt.Errorf("%s: preview.swatches.label is required", where)
+	}
+	return nil
+}
+
+// validateSpans checks that every run has exactly one source of colour. Both
+// set is ambiguous; neither is invisible.
+func validateSpans(where, what string, lines [][]Span) error {
+	for i, line := range lines {
+		for j, s := range line {
+			if s.Role == "" && s.Key == "" {
+				return fmt.Errorf("%s: %s line %d span %d has neither a role (r) nor a palette key (c)", where, what, i, j)
+			}
+			if s.Role != "" && s.Key != "" {
+				return fmt.Errorf("%s: %s line %d span %d sets both r and c; pick one", where, what, i, j)
+			}
+		}
 	}
 	return nil
 }
