@@ -393,7 +393,8 @@ func TestEntryPreviewRenders(t *testing.T) {
 
 // The terminal frame is the one every shipped terminal port is checked against
 // byte for byte, so the refactor that added the other frames must not have
-// moved a single character of it. The golden is kitty/noite as published.
+// moved a single character of it. The golden is kitty/noite as published,
+// with the name capitalised the way the catalogue now lists it.
 func TestTerminalFrameIsUnchanged(t *testing.T) {
 	pal, roles, reg, _ := fixtures(t)
 	p, _ := reg.Port("kitty")
@@ -575,7 +576,7 @@ func TestPaneFrame(t *testing.T) {
 	if !strings.Contains(s, fmt.Sprintf(`<text x="%d" y="%d" xml:space="preserve"`, bodyLeft, paneBodyTop)) {
 		t.Error("the session does not start at the top of the pane")
 	}
-	if !strings.Contains(s, `aria-label="eza themed with SP Night`) {
+	if !strings.Contains(s, `aria-label="Eza themed with SP Night`) {
 		t.Error("the pane lost its aria-label")
 	}
 }

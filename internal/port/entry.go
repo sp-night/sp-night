@@ -27,7 +27,7 @@ func Entry(slug string) string {
 	var b strings.Builder
 
 	fmt.Fprintf(&b, "  - slug: %s\n", slug)
-	fmt.Fprintf(&b, "    name: %s                       # TODO display name, as the project spells it\n", slug)
+	fmt.Fprintf(&b, "    name: %s                       # TODO display name, capitalised: every port is listed the same way\n", slug)
 	fmt.Fprintf(&b, "    group: terminal                # TODO a key of `groups` at the top of this file\n")
 	fmt.Fprintf(&b, "    blurb: TODO one line on what the port covers.\n")
 	fmt.Fprintf(&b, "    homepage: https://example.com  # TODO the themed app's own site\n")

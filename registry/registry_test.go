@@ -3,6 +3,8 @@ package registry
 import (
 	"strings"
 	"testing"
+	"unicode"
+	"unicode/utf8"
 )
 
 func TestEmbeddedCatalogueLoads(t *testing.T) {
@@ -317,5 +319,21 @@ ports:
 	}
 	if got := r.Ports[0].Preview.Kind(); got != FrameTerminal {
 		t.Errorf("an empty frame reads as %q, want %q", got, FrameTerminal)
+	}
+}
+
+// Names are listed together — on the website, in the org README, in the
+// catalogue printout — so they are capitalised alike. Kitty, not kitty, even
+// where the project spells itself in lower case.
+func TestPortNamesAreCapitalised(t *testing.T) {
+	r, err := Embedded()
+	if err != nil {
+		t.Fatalf("Embedded: %v", err)
+	}
+	for _, p := range r.Ports {
+		first, _ := utf8.DecodeRuneInString(p.Name)
+		if !unicode.IsUpper(first) {
+			t.Errorf("%s: name %q does not start with a capital", p.Slug, p.Name)
+		}
 	}
 }

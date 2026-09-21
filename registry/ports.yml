@@ -12,7 +12,8 @@
 #
 # Fields:
 #   slug           unique id, and the repository name under the org
-#   name           display name
+#   name           display name, capitalised — Kitty, Eza — so a list of ports
+#                  reads as one list, whatever case the project uses for itself
 #   group          a key of `groups` below
 #   blurb          one line on what the port covers
 #   homepage       the themed app's own site
@@ -166,7 +167,7 @@ ports:
           - {t: "separation ΔE ≥ 0.10 or ΔL ≥ 0.04", r: ui.fg_dim}
 
   - slug: kitty
-    name: kitty
+    name: Kitty
     group: terminal
     blurb: The 16-colour ANSI mapping, plus cursor, selection, splits, the tab bar and the three mark slots.
     homepage: https://sw.kovidgoyal.net/kitty/
@@ -450,7 +451,7 @@ ports:
           - {t: "70 pairs per flavour, AA on every surface", r: ui.fg_dim}
 
   - slug: eza
-    name: eza
+    name: Eza
     group: shell
     blurb: A native eza theme.yml — file kinds, permissions, sizes, git status and per-language accents.
     homepage: https://eza.rocks/
@@ -781,7 +782,7 @@ ports:
           - {t: "expected `;`, found `}`", r: ui.fg_dim}
 
   - slug: herdr
-    name: herdr
+    name: Herdr
     group: multiplexer
     blurb: The agent sidebar, panes, tabs and toasts — including the four colours that say what each agent is doing.
     homepage: https://herdr.dev/
@@ -924,7 +925,7 @@ ports:
           - {t: "spn check: 70 pairs per flavour, AA on every surface", r: ui.fg_dim}
 
   - slug: foot
-    name: foot
+    name: Foot
     group: terminal
     blurb: The 16-colour ANSI mapping, plus cursor, selection, URL mode, the scrollback search box and indicator, and the bell flash.
     homepage: https://codeberg.org/dnkl/foot
