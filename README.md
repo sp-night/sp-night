@@ -79,6 +79,8 @@ which key of the app means which role — and that mapping stays in the port
 repository, because it is the only complete record of that decision.
 
 Full walkthrough: [docs/port-creation.md](docs/port-creation.md).
+All the documentation, in English and Portuguese, is also published at
+[rogeriojunior31.github.io/docs/sp-night](https://rogeriojunior31.github.io/en/docs/sp-night/).
 What each role means: [docs/SPEC.md](docs/SPEC.md).
 
 ## What a port repository looks like
@@ -173,12 +175,17 @@ towards green at the same lightness and chroma. A new flavour has to differ by
 spn gen        render a port's mapping into finished theme files
 spn readme     render a port's canonical README from the catalogue
 spn preview    draw the synthetic preview for each flavour
+spn entry      print a starter catalogue entry for a new port
 spn new        scaffold a new port repository
 spn lint       check that mappings ask for roles, not raw colours
+spn pin        rewrite the engine version a mapping declares
 spn check      audit contrast, accent separation and colour vision
 spn palette    print the palette and the resolved role layer
 spn registry   list and validate the port catalogue
+spn version    print the tool version
 ```
+
+Every flag is in the [command reference](docs/reference/cli.md).
 
 `--check` on `gen`, `readme` and `preview` writes nothing and fails when what is
 committed is out of date. That is what a port's CI runs.
@@ -198,7 +205,7 @@ internal/theme/   loading, validation, role resolution
 internal/audit/   contrast, accent separation, colour vision, KDE schemes
 internal/render/  frontmatter, template helpers, the roles-only lint
 internal/port/    README and preview generation, port scaffolding
-docs/             the spec, and how to add a port
+docs/             the spec, how to add a port, and the command reference
 ```
 
 ## Building it yourself
