@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "name": "SP Night",
+  "requiredTranslations": ["pt-br"],
+  "summary": {
+    "en": "A dark colour scheme with São Paulo as its reference: the palette contract, the spn engine and the guide to adding a port.",
+    "pt-br": "Um tema escuro com São Paulo como referência: o contrato da paleta, o motor spn e o guia para criar um port."
+  }
+}
